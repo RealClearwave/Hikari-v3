@@ -35,6 +35,20 @@ export const register = (data: RegisterPayload): Promise<ApiResponse<null>> => {
   return request.post('/user/register', data);
 };
 
+export interface UpdateProfilePayload {
+  username: string;
+  email: string;
+  avatar: string;
+}
+
+export const getMyProfile = (): Promise<ApiResponse<User>> => {
+  return request.get('/user/profile');
+};
+
+export const updateMyProfile = (payload: UpdateProfilePayload): Promise<ApiResponse<User>> => {
+  return request.put('/user/profile', payload);
+};
+
 export type UserDetail = User;
 
 export const getUserDetail = (id: number): Promise<ApiResponse<UserDetail>> => {

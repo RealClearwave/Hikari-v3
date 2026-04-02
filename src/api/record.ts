@@ -11,11 +11,18 @@ export interface RecordItem {
   memory_used: number;
   error_info: string;
   created_at: string;
+  username?: string;
+  avatar?: string;
+}
+
+export interface RecordStats {
+  status_counts: Record<string, number>;
 }
 
 export interface RecordListResponse {
   list: RecordItem[];
   total: number;
+  stats?: RecordStats;
 }
 
 export interface SubmitRecordPayload {

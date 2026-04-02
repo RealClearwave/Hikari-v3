@@ -12,6 +12,10 @@ export interface Problem {
   difficulty: number;
   is_public: boolean;
   created_by: number;
+  created_by_name?: string;
+  submission_count?: number;
+  accepted_count?: number;
+  acceptance_rate?: number;
   created_at: string;
   updated_at: string;
 }

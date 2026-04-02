@@ -5,10 +5,12 @@ import { Box, Heading, Flex, Text, VStack, HStack, Divider, Button, Badge, Link,
 import { FaComments } from 'react-icons/fa';
 import NextLink from 'next/link';
 import { BlogItem, getBlogList } from '@/api/blog';
+import { useAuthStore } from '@/store/auth';
 
 export default function DiscussListPage() {
   const [topics, setTopics] = useState<BlogItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const currentUser = useAuthStore((state) => state.user);
   const toast = useToast();
 
   const fetchData = useCallback(async () => {
@@ -34,7 +36,7 @@ export default function DiscussListPage() {
     <Box bg="white" p={6} borderWidth={1} borderColor="gray.200" borderRadius="md" boxShadow="sm">
       <Flex justify="space-between" align="center" mb={6}>
         <Heading size="lg" color="gray.800">讨论区 (Discuss)</Heading>
-        <Button colorScheme="blue" leftIcon={<FaComments />}>发布新帖</Button>
+        <Button as={NextLink} href="/discuss/new" colorScheme="blue" leftIcon={<FaComments />}>发布新帖</Button>
       </Flex>
 
       {loading ? (
@@ -47,7 +49,10 @@ export default function DiscussListPage() {
                 <HStack spacing={4}>
                   <VStack align="start" spacing={1}>
                     <HStack>
-                      <Badge colorScheme="blue">博客</Badge>
+                      <Badge colorScheme={topic.type === 1 ? 'green' : 'blue'}>{topic.type === 1 ? '题解' : '博客'}</Badge>
+                      {(topic.tags || []).map((tag) => (
+                        <Badge key={`${topic.id}-${tag}`} colorScheme={tag === '题解' ? 'green' : 'gray'}>{tag}</Badge>
+                      ))}
                     </HStack>
                     <Link as={NextLink} href={`/discuss/${topic.id}`}>
                       <Text fontSize="lg" fontWeight="bold" color="blue.600" cursor="pointer" _hover={{ textDecoration: 'underline' }}>
@@ -56,12 +61,28 @@ export default function DiscussListPage() {
                     </Link>
                     <HStack fontSize="sm" color="gray.500" spacing={4}>
                       <Text>用户ID: {topic.user_id}</Text>
+                      {topic.type === 1 && topic.problem_id > 0 && (
+                        <Link as={NextLink} href={`/problem/${topic.problem_id}`} color="green.600" _hover={{ textDecoration: 'underline' }}>
+                          题号: {topic.problem_id}
+                        </Link>
+                      )}
                       <Text>更新于 {new Date(topic.updated_at).toLocaleString()}</Text>
                     </HStack>
                   </VStack>
                 </HStack>
 
                 <HStack spacing={6} color="gray.500" fontSize="sm" display={{ base: 'none', md: 'flex' }}>
+                  {(currentUser?.role === 1 || currentUser?.id === topic.user_id) && (
+                    <Button
+                      as={NextLink}
+                      href={`/discuss/${topic.id}/edit`}
+                      size="xs"
+                      colorScheme="blue"
+                      variant="ghost"
+                    >
+                      编辑
+                    </Button>
+                  )}
                   <VStack spacing={0}>
                     <Text fontWeight="bold" color="gray.700">{topic.views}</Text>
                     <Text>浏览</Text>

@@ -61,7 +61,7 @@ export default function HomePage() {
     setLoading(true);
     try {
       const [blogRes, recordRes, problemRes, contestRes] = await Promise.all([
-        getBlogList(1, 6),
+        getBlogList(1, 6, 0),
         getRecordList(1, 200),
         getProblemList(1, 1),
         getContestList(1, 1),

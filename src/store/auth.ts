@@ -35,6 +35,7 @@ interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   login: (userData: User, token: string) => void;
+  updateUser: (userData: User) => void;
   logout: () => void;
 }
 
@@ -54,6 +55,15 @@ export const useAuthStore = create<AuthState>((set) => ({
     safeSetItem('token', token);
     safeSetItem('user', JSON.stringify(userData));
     set({ user: userData, token, isAuthenticated: true });
+  },
+
+  updateUser: (userData) => {
+    safeSetItem('user', JSON.stringify(userData));
+    set((state) => ({
+      user: userData,
+      token: state.token,
+      isAuthenticated: !!state.token,
+    }));
   },
   
   logout: () => {

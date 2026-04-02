@@ -104,7 +104,7 @@ export default function Navbar() {
                     </Text>
                   </Box>
                   <MenuDivider />
-                  <MenuItem as={NextLink} href="/user/profile">
+                  <MenuItem as={NextLink} href="/user/edit">
                     修改信息
                   </MenuItem>
                   <MenuItem onClick={handleLogout}>
