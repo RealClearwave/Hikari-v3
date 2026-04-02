@@ -1,36 +1,105 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OJv3 Next.js
 
-## Getting Started
+该目录是 OJv3 的 Next.js 重构版本，包含：
 
-First, run the development server:
+- 前端页面迁移到 App Router
+- 后端 API 迁移到 Next.js Route Handlers（`/api/v1/**`）
+
+## 1. 安装依赖
+
+```bash
+npm install
+```
+
+## 2. 配置环境变量
+
+复制 `.env.example` 为 `.env.local` 并按你的本地环境修改：
+
+```bash
+cp .env.example .env.local
+```
+
+关键变量：
+
+- `DB_HOST`
+- `DB_PORT`
+- `DB_USER`
+- `DB_PASSWORD`
+- `DB_NAME`
+- `JWT_SECRET`
+- `JWT_EXPIRE_HOURS`
+
+## 3. 初始化数据库
+
+使用 SQL 脚本：
+
+- `scripts/init.sql`
+- `scripts/seed.sql`（插入示例数据，便于功能测试）
+- `scripts/seed_sample_files.sh`（创建题目样例 `.in/.out` 文件）
+
+示例：
+
+```bash
+mysql -u root -p < scripts/init.sql
+mysql -u root -p < scripts/seed.sql
+bash scripts/seed_sample_files.sh
+```
+
+题目样例不再存储在数据库 `sample_cases` 字段中，改为文件形式：
+
+- `problem_data/<problem_id>/<case_index>.in`
+- `problem_data/<problem_id>/<case_index>.out`
+
+示例测试账号：
+
+- 管理员：`admin` / `admin123`
+- 普通用户：`alice` / `user123`
+
+## 4. 启动开发环境
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+默认地址：`http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 5. 已迁移 API
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+基础：
 
-## Learn More
+- `GET /api/v1/ping`
 
-To learn more about Next.js, take a look at the following resources:
+用户：
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `POST /api/v1/user/register`
+- `POST /api/v1/user/login`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+题目：
 
-## Deploy on Vercel
+- `GET /api/v1/problem/list`
+- `GET /api/v1/problem/:id`
+- `POST /api/v1/problem`（需要管理员 JWT）
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+记录：
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `GET /api/v1/record/list`
+- `POST /api/v1/record/submit`（需要登录 JWT）
+
+竞赛/博客：
+
+- `GET /api/v1/contest/list`
+- `GET /api/v1/blog/list`
+
+## 6. 响应格式
+
+统一响应结构：
+
+```json
+{
+	"code": 0,
+	"msg": "success",
+	"data": {}
+}
+```
+
+前端请求默认基址：`/api/v1`。
