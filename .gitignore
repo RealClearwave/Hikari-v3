@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# testing and local generated data
+problem_data/
+*.mjs
+!eslint.config.mjs
+!postcss.config.mjs
+test_*.js
+
+# OS files
+.DS_Store
