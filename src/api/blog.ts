@@ -23,3 +23,12 @@ export const getBlogList = (
     params: { page, size },
   });
 };
+
+export interface BlogDetail extends BlogItem {
+  username: string;
+  avatar: string;
+}
+
+export const getBlogDetail = (id: number): Promise<ApiResponse<BlogDetail>> => {
+  return request.get(`/blog/${id}`);
+};

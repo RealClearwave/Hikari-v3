@@ -34,3 +34,32 @@ export const login = (data: LoginPayload): Promise<ApiResponse<LoginResponse>> =
 export const register = (data: RegisterPayload): Promise<ApiResponse<null>> => {
   return request.post('/user/register', data);
 };
+
+export type UserDetail = User;
+
+export const getUserDetail = (id: number): Promise<ApiResponse<UserDetail>> => {
+  return request.get(`/user/${id}`);
+};
+
+export interface UserRankRow {
+  userId: number;
+  username: string;
+  avatar: string;
+  rating: number;
+  accepted: number;
+  submissions: number;
+}
+
+export interface UserListResponse {
+  list: UserRankRow[];
+  total: number;
+}
+
+export const getUserList = (
+  page: number,
+  size: number,
+): Promise<ApiResponse<UserListResponse>> => {
+  return request.get('/user/list', {
+    params: { page, size },
+  });
+};
