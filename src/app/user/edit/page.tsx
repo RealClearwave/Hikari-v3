@@ -20,6 +20,8 @@ export default function UserEditPage() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [avatar, setAvatar] = useState('');
+  const [role, setRole] = useState(0);
+  const [badge, setBadge] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const toast = useToast();
@@ -42,6 +44,8 @@ export default function UserEditPage() {
         setUsername(res.data.username || '');
         setEmail(res.data.email || '');
         setAvatar(res.data.avatar || '');
+        setRole(Number(res.data.role || 0));
+        setBadge(res.data.badge || '');
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '加载失败';
@@ -61,6 +65,7 @@ export default function UserEditPage() {
     const name = username.trim();
     const mail = email.trim();
     const avatarUrl = avatar.trim();
+    const badgeText = badge.trim();
 
     if (!name || !mail) {
       toast({ title: '用户名和邮箱不能为空', status: 'warning', duration: 2000, isClosable: true });
@@ -69,7 +74,10 @@ export default function UserEditPage() {
 
     setSaving(true);
     try {
-      const res = await updateMyProfile({ username: name, email: mail, avatar: avatarUrl });
+      const payload = role === 1
+        ? { username: name, email: mail, avatar: avatarUrl, badge: badgeText }
+        : { username: name, email: mail, avatar: avatarUrl };
+      const res = await updateMyProfile(payload);
       if (res.code === 0) {
         updateUser(res.data);
         toast({ title: '信息修改成功', status: 'success', duration: 2000, isClosable: true });
@@ -106,6 +114,18 @@ export default function UserEditPage() {
             <FormLabel>头像 URL</FormLabel>
             <Input value={avatar} onChange={(e) => setAvatar(e.target.value)} maxLength={255} />
           </FormControl>
+
+          {role === 1 && (
+            <FormControl>
+              <FormLabel>Badge（管理员）</FormLabel>
+              <Input
+                value={badge}
+                onChange={(e) => setBadge(e.target.value)}
+                maxLength={64}
+                placeholder="例如：官方认证"
+              />
+            </FormControl>
+          )}
 
           <Button type="submit" colorScheme="blue" alignSelf="flex-end" isLoading={saving} loadingText="保存中">
             保存修改

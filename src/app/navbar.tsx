@@ -5,6 +5,7 @@ import { Avatar, Box, Button, Container, Flex, HStack, Link, Menu, MenuButton, M
 import NextLink from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth";
+import UserName from "@/components/UserName";
 
 const NAV_ITEMS = [
   { label: "首页", href: "/" },
@@ -89,16 +90,28 @@ export default function Navbar() {
                 >
                   <HStack spacing={2}>
                     <Avatar size="sm" name={currentUser.username} src={currentUser.avatar || undefined} />
-                    <Text fontWeight="600" color="gray.700" maxW="140px" noOfLines={1}>
-                      {currentUser.username}
-                    </Text>
+                    <Box maxW="160px" overflow="hidden">
+                      <UserName
+                        username={currentUser.username}
+                        role={currentUser.role}
+                        badge={currentUser.badge}
+                        withLink={false}
+                        fontSize="sm"
+                      />
+                    </Box>
                   </HStack>
                 </MenuButton>
                 <MenuList borderColor="blackAlpha.100" boxShadow="lg">
                   <Box px={3} py={2}>
-                    <Text fontSize="sm" fontWeight="700" color="gray.800" noOfLines={1}>
-                      {currentUser.username}
-                    </Text>
+                    <Box maxW="220px" overflow="hidden">
+                      <UserName
+                        username={currentUser.username}
+                        role={currentUser.role}
+                        badge={currentUser.badge}
+                        withLink={false}
+                        fontSize="sm"
+                      />
+                    </Box>
                     <Text fontSize="xs" color="gray.500" noOfLines={1}>
                       {currentUser.email}
                     </Text>

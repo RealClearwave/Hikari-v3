@@ -1,11 +1,14 @@
 import { db } from "@/server/db";
 import { fail, success } from "@/server/response";
+import { ensureUserMetaColumns } from "@/server/user_meta";
 
 export async function GET(
   _req: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
   try {
+    await ensureUserMetaColumns();
+
     const { id } = await ctx.params;
     const recordId = Number(id);
     if (!Number.isFinite(recordId) || recordId <= 0) {
@@ -28,10 +31,18 @@ export async function GET(
         r.created_at,
         u.username,
         u.avatar,
+        COALESCE(u.role, 0) AS role,
+        COALESCE(u.badge, '') AS badge,
+        COALESCE(us.accepted_count, 0) AS accepted_count,
         p.title AS problem_title
       FROM records r
       LEFT JOIN users u ON u.id = r.user_id
       LEFT JOIN problems p ON p.id = r.problem_id
+      LEFT JOIN (
+        SELECT user_id, SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS accepted_count
+        FROM records
+        GROUP BY user_id
+      ) us ON us.user_id = r.user_id
       WHERE r.id = ?
       LIMIT 1
       `,

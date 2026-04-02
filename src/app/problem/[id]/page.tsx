@@ -32,6 +32,7 @@ import { useParams } from 'next/navigation';
 import { BlogItem, getBlogList } from '@/api/blog';
 import { getProblemDetail, Problem } from '@/api/problem';
 import { getRecordList, RecordItem, RecordStats } from '@/api/record';
+import UserName from '@/components/UserName';
 
 function statusText(status: number) {
   const map: Record<number, { text: string; scheme: string }> = {
@@ -253,9 +254,13 @@ export default function ProblemDetail() {
                               <Td>
                                 <HStack spacing={2}>
                                   <Avatar size="xs" name={r.username || `User ${r.user_id}`} src={r.avatar || undefined} />
-                                  <Link as={NextLink} href={`/user/profile?uid=${r.user_id}`} color="purple.600" _hover={{ textDecoration: 'underline' }}>
-                                    {r.username || `User #${r.user_id}`}
-                                  </Link>
+                                  <UserName
+                                    username={r.username || `User #${r.user_id}`}
+                                    userId={r.user_id}
+                                    role={r.role}
+                                    badge={r.badge}
+                                    acceptedCount={r.accepted_count}
+                                  />
                                 </HStack>
                               </Td>
                               <Td><Badge colorScheme={meta.scheme}>{meta.text}</Badge></Td>

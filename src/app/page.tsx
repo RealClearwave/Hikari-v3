@@ -40,9 +40,13 @@ import { getBlogList, BlogItem } from '@/api/blog';
 import { getContestList } from '@/api/contest';
 import { getProblemList } from '@/api/problem';
 import { getRecordList, RecordItem } from '@/api/record';
+import UserName from '@/components/UserName';
 
 interface RankItem {
   userId: number;
+  username: string;
+  role?: number;
+  badge?: string;
   submissions: number;
   accepted: number;
 }
@@ -86,7 +90,25 @@ export default function HomePage() {
   const ranking = useMemo(() => {
     const map = new Map<number, RankItem>();
     for (const r of records) {
-      const cur = map.get(r.user_id) || { userId: r.user_id, submissions: 0, accepted: 0 };
+      const cur = map.get(r.user_id) || {
+        userId: r.user_id,
+        username: r.username || `用户 #${r.user_id}`,
+        role: r.role,
+        badge: r.badge,
+        submissions: 0,
+        accepted: 0,
+      };
+
+      if (!cur.username && r.username) {
+        cur.username = r.username;
+      }
+      if (typeof r.role === 'number') {
+        cur.role = r.role;
+      }
+      if (typeof r.badge === 'string') {
+        cur.badge = r.badge;
+      }
+
       cur.submissions += 1;
       if (r.status === 2) cur.accepted += 1;
       map.set(r.user_id, cur);
@@ -117,11 +139,11 @@ export default function HomePage() {
               <Flex justify="space-between" align={{ base: 'flex-start', md: 'center' }} direction={{ base: 'column', md: 'row' }} gap={6}>
                 <VStack align="start" spacing={3}>
                   <Badge colorScheme="blue" px={3} py={1} borderRadius="full">Hikari OJ v3</Badge>
-                  <Heading size="xl" letterSpacing="tight" color="gray.800">实时数据驱动的在线评测首页</Heading>
-                  <Text color="gray.600" maxW="760px">公告、排行与统计均来自真实后端 API，不再依赖前端 mock 数据。</Text>
+                  <Heading size="xl" letterSpacing="tight" color="gray.800">欢迎来到 Hikari Online Judge</Heading>
+                  <Text color="gray.600" maxW="760px">在这里你可以刷题、参加比赛、查看评测结果和学习题解，快速追踪自己的训练进度。</Text>
                   <HStack spacing={3} pt={1}>
-                    <Button as={NextLink} href="/problem" colorScheme="blue" rightIcon={<Icon as={FiArrowRight} />}>进入题库</Button>
-                    <Button as={NextLink} href="/contest" variant="outline" borderColor="gray.300">查看竞赛</Button>
+                    <Button as={NextLink} href="/problem" colorScheme="blue" rightIcon={<Icon as={FiArrowRight} />}>开始刷题</Button>
+                    <Button as={NextLink} href="/contest" variant="outline" borderColor="gray.300">参加比赛</Button>
                   </HStack>
                 </VStack>
                 <Grid templateColumns="repeat(2, minmax(140px, 1fr))" gap={3} w={{ base: '100%', md: 'auto' }}>
@@ -139,7 +161,7 @@ export default function HomePage() {
               <Card>
                 <CardBody p={0}>
                   <Flex align="center" justify="space-between" px={6} py={4} borderBottom="1px solid" borderColor="blackAlpha.100">
-                    <HStack><Icon as={FiFlag} color="blue.500" /><Heading size="md">最新公告</Heading></HStack>
+                    <HStack><Icon as={FiFlag} color="blue.500" /><Heading size="md">最新动态</Heading></HStack>
                     <Link as={NextLink} href="/discuss" color="blue.500" fontSize="sm">查看全部</Link>
                   </Flex>
                   {loading ? (
@@ -159,15 +181,15 @@ export default function HomePage() {
               <Card mt={6}>
                 <CardBody p={0}>
                   <Flex align="center" justify="space-between" px={6} py={4} borderBottom="1px solid" borderColor="blackAlpha.100">
-                    <HStack><Icon as={FiBookOpen} color="blue.500" /><Heading size="md">实时榜单（按 AC）</Heading></HStack>
+                    <HStack><Icon as={FiBookOpen} color="blue.500" /><Heading size="md">训练榜单（按通过题数）</Heading></HStack>
                     <Badge colorScheme="green">Live</Badge>
                   </Flex>
                   <Table>
                     <Thead bg="gray.50">
                       <Tr>
-                        <Th>Rank</Th>
+                        <Th>排名</Th>
                         <Th>用户</Th>
-                        <Th isNumeric>AC</Th>
+                        <Th isNumeric>通过</Th>
                         <Th isNumeric>提交</Th>
                       </Tr>
                     </Thead>
@@ -176,7 +198,13 @@ export default function HomePage() {
                         <Tr key={u.userId} _hover={{ bg: 'gray.50' }}>
                           <Td fontWeight="bold">#{i + 1}</Td>
                           <Td>
-                            <Link as={NextLink} href={`/user/profile?uid=${u.userId}`} color="gray.800" fontWeight="semibold">User #{u.userId}</Link>
+                            <UserName
+                              username={u.username}
+                              userId={u.userId}
+                              role={u.role}
+                              badge={u.badge}
+                              acceptedCount={u.accepted}
+                            />
                           </Td>
                           <Td isNumeric>{u.accepted}</Td>
                           <Td isNumeric>{u.submissions}</Td>
@@ -192,20 +220,20 @@ export default function HomePage() {
               <VStack spacing={6} align="stretch">
                 <Card>
                   <CardBody>
-                    <HStack mb={3}><Icon as={FiSearch} color="blue.500" /><Heading size="sm">问题跳转</Heading></HStack>
+                    <HStack mb={3}><Icon as={FiSearch} color="blue.500" /><Heading size="sm">题目直达</Heading></HStack>
                     <Flex>
-                      <Input placeholder="输入题号，例如 1000" value={jumpId} onChange={(e) => setJumpId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && jumpToProblem()} borderRightRadius={0} />
-                      <Button colorScheme="blue" borderLeftRadius={0} onClick={jumpToProblem}>Go</Button>
+                      <Input placeholder="输入题号（例如 1000）" value={jumpId} onChange={(e) => setJumpId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && jumpToProblem()} borderRightRadius={0} />
+                      <Button colorScheme="blue" borderLeftRadius={0} onClick={jumpToProblem}>进入</Button>
                     </Flex>
                   </CardBody>
                 </Card>
 
                 <Card>
                   <CardBody>
-                    <HStack mb={3}><Icon as={FiCpu} color="blue.500" /><Heading size="sm">评测状态</Heading></HStack>
+                    <HStack mb={3}><Icon as={FiCpu} color="blue.500" /><Heading size="sm">训练统计</Heading></HStack>
                     <Text color="gray.600" fontSize="sm" mb={2}>最近提交通过率</Text>
                     <Progress value={acceptedRate} colorScheme="blue" borderRadius="full" mb={3} />
-                    <Text color="gray.500" fontSize="sm">基于最近 {records.length} 条记录实时统计</Text>
+                    <Text color="gray.500" fontSize="sm">基于最近 {records.length} 条提交记录统计</Text>
                   </CardBody>
                 </Card>
               </VStack>

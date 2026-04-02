@@ -1,34 +1,41 @@
 import { db } from "@/server/db";
 import { fail, success } from "@/server/response";
+import { ensureUserMetaColumns } from "@/server/user_meta";
 
 export async function GET(req: Request) {
   try {
+    await ensureUserMetaColumns();
+
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, Number(searchParams.get("page") || 1));
     const size = Math.min(100, Math.max(1, Number(searchParams.get("size") || 20)));
     const problemId = Number(searchParams.get("problem_id") || 0);
     const userId = Number(searchParams.get("user_id") || 0);
 
-    const whereParts: string[] = [];
+    const wherePartsBase: string[] = [];
+    const wherePartsJoin: string[] = [];
     const params: Array<number> = [];
     if (problemId > 0) {
-      whereParts.push("problem_id = ?");
+      wherePartsBase.push("problem_id = ?");
+      wherePartsJoin.push("r.problem_id = ?");
       params.push(problemId);
     }
     if (userId > 0) {
-      whereParts.push("user_id = ?");
+      wherePartsBase.push("user_id = ?");
+      wherePartsJoin.push("r.user_id = ?");
       params.push(userId);
     }
-    const whereSQL = whereParts.length > 0 ? `WHERE ${whereParts.join(" AND ")}` : "";
+    const whereSQLBase = wherePartsBase.length > 0 ? `WHERE ${wherePartsBase.join(" AND ")}` : "";
+    const whereSQLJoin = wherePartsJoin.length > 0 ? `WHERE ${wherePartsJoin.join(" AND ")}` : "";
 
-    const [countRows] = await db.query(`SELECT COUNT(*) AS total FROM records ${whereSQL}`, params);
+    const [countRows] = await db.query(`SELECT COUNT(*) AS total FROM records ${whereSQLBase}`, params);
     const total = Array.isArray(countRows) && countRows.length > 0 ? Number((countRows[0] as { total: number }).total) : 0;
 
     const [statusRows] = await db.query(
       `
       SELECT status, COUNT(*) AS count
       FROM records
-      ${whereSQL}
+      ${whereSQLBase}
       GROUP BY status
       `,
       params,
@@ -55,10 +62,18 @@ export async function GET(req: Request) {
         r.error_info,
         r.created_at,
         COALESCE(u.username, '') AS username,
-        COALESCE(u.avatar, '') AS avatar
+        COALESCE(u.avatar, '') AS avatar,
+        COALESCE(u.role, 0) AS role,
+        COALESCE(u.badge, '') AS badge,
+        COALESCE(us.accepted_count, 0) AS accepted_count
       FROM records r
       LEFT JOIN users u ON u.id = r.user_id
-      ${whereSQL}
+      LEFT JOIN (
+        SELECT user_id, SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS accepted_count
+        FROM records
+        GROUP BY user_id
+      ) us ON us.user_id = r.user_id
+      ${whereSQLJoin}
       ORDER BY r.id DESC
       LIMIT ? OFFSET ?
       `,

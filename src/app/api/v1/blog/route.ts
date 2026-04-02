@@ -2,6 +2,7 @@ import { db } from "@/server/db";
 import { fail, success } from "@/server/response";
 import { parseAuthorizationHeader, verifyToken } from "@/server/auth";
 import { computeArticleKind, ensureArticleMetaColumns, normalizeTags, stringifyTags } from "@/server/article";
+import { verifyCaptcha } from "@/server/captcha";
 
 export async function POST(req: Request) {
   try {
@@ -16,9 +17,15 @@ export async function POST(req: Request) {
     const body = await req.json();
     const title = String(body?.title || "").trim();
     const content = String(body?.content || "").trim();
+    const captchaId = String(body?.captcha_id || "");
+    const captchaAnswer = String(body?.captcha_answer || "");
     const tags = normalizeTags(body?.tags);
     const linkedProblemId = Number(body?.problem_id || 0);
     const { type, problemId } = computeArticleKind(tags, linkedProblemId);
+
+    if (!verifyCaptcha(captchaId, captchaAnswer)) {
+      return fail("invalid captcha", 400);
+    }
 
     if (!title || !content) {
       return fail("title and content are required", 400);

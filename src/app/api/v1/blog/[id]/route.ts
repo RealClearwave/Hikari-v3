@@ -2,6 +2,7 @@ import { db } from "@/server/db";
 import { fail, success } from "@/server/response";
 import { parseAuthorizationHeader, verifyToken } from "@/server/auth";
 import { computeArticleKind, ensureArticleMetaColumns, normalizeTags, parseTagsField, stringifyTags } from "@/server/article";
+import { ensureUserMetaColumns } from "@/server/user_meta";
 
 interface BlogRow {
   id: number;
@@ -16,11 +17,15 @@ interface BlogRow {
   updated_at: string;
   username: string;
   avatar: string;
+  role: number;
+  badge: string;
+  accepted_count: number;
 }
 
 export async function GET(_: Request, context: { params: Promise<{ id: string }> }) {
   try {
     await ensureArticleMetaColumns();
+    await ensureUserMetaColumns();
 
     const { id } = await context.params;
     const articleId = Number(id);
@@ -44,9 +49,17 @@ export async function GET(_: Request, context: { params: Promise<{ id: string }>
         a.created_at,
         a.updated_at,
         u.username,
-        u.avatar
+        u.avatar,
+        COALESCE(u.role, 0) AS role,
+        COALESCE(u.badge, '') AS badge,
+        COALESCE(us.accepted_count, 0) AS accepted_count
       FROM articles a
       LEFT JOIN users u ON u.id = a.user_id
+      LEFT JOIN (
+        SELECT user_id, SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS accepted_count
+        FROM records
+        GROUP BY user_id
+      ) us ON us.user_id = a.user_id
       WHERE a.id = ? AND a.type IN (0, 1)
       LIMIT 1
       `,

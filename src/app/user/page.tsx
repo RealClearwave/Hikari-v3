@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from 'react';
-import { Box, Table, Thead, Tbody, Tr, Th, Td, Heading, Avatar, Flex, Badge, Text, Link, Spinner, useToast } from '@chakra-ui/react';
-import NextLink from 'next/link';
+import { Box, Table, Thead, Tbody, Tr, Th, Td, Heading, Avatar, Flex, Badge, Spinner, useToast } from '@chakra-ui/react';
 import { getUserList, UserRankRow } from '@/api/user';
+import UserName from '@/components/UserName';
 
 export default function UserRankPage() {
   const [rows, setRows] = useState<UserRankRow[]>([]);
@@ -55,10 +55,14 @@ export default function UserRankPage() {
                 </Td>
                 <Td>
                   <Flex align="center">
-                    <Link as={NextLink} href={`/user/profile?uid=${u.userId}`} _hover={{ textDecoration: 'underline' }}>
-                        <Text fontWeight="bold" color="purple.600" mr={3} fontSize="md">{u.username}</Text>
-                    </Link>
-                    <Badge bg="#8e44ad" color="white" borderRadius="sm" px={2} py={0.5}>Active</Badge>
+                    <UserName
+                      username={u.username}
+                      userId={u.userId}
+                      role={u.role}
+                      badge={u.badge}
+                      acceptedCount={u.accepted}
+                    />
+                    <Badge bg="gray.200" color="gray.700" borderRadius="sm" px={2} py={0.5}>#{idx + 1}</Badge>
                   </Flex>
                 </Td>
                 <Td isNumeric fontWeight="medium" color="gray.700">{u.accepted}</Td>

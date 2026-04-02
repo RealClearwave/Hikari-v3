@@ -1,6 +1,7 @@
 import { db } from "@/server/db";
 import { fail, success } from "@/server/response";
 import { parseAuthorizationHeader, verifyToken } from "@/server/auth";
+import { verifyCaptcha } from "@/server/captcha";
 
 export async function POST(req: Request) {
   try {
@@ -15,6 +16,8 @@ export async function POST(req: Request) {
     const contestId = Number(body?.contest_id || 0);
     const language = String(body?.language || "").trim();
     const code = String(body?.code || "");
+    const captchaId = String(body?.captcha_id || "");
+    const captchaAnswer = String(body?.captcha_answer || "");
     const status = Number(body?.status ?? 0);
     const timeUsed = Number(body?.time_used ?? 0);
     const memoryUsed = Number(body?.memory_used ?? 0);
@@ -22,6 +25,9 @@ export async function POST(req: Request) {
 
     if (problemId <= 0 || !language || !code) {
       return fail("invalid parameters", 400);
+    }
+    if (!verifyCaptcha(captchaId, captchaAnswer)) {
+      return fail("invalid captcha", 400);
     }
 
     const [result] = await db.query(

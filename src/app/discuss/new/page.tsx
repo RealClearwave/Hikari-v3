@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import {
   Checkbox,
   Box,
@@ -19,6 +19,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { createBlog } from '@/api/blog';
 import { useAuthStore } from '@/store/auth';
+import { getCaptcha } from '@/api/captcha';
 
 export default function DiscussNewPage() {
   const [title, setTitle] = useState('');
@@ -27,10 +28,30 @@ export default function DiscussNewPage() {
   const [isSolution, setIsSolution] = useState(false);
   const [linkProblem, setLinkProblem] = useState(false);
   const [problemId, setProblemId] = useState('');
+  const [captchaId, setCaptchaId] = useState('');
+  const [captchaChallenge, setCaptchaChallenge] = useState('');
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const toast = useToast();
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  const refreshCaptcha = async () => {
+    try {
+      const res = await getCaptcha();
+      if (res.code === 0) {
+        setCaptchaId(res.data.captcha_id);
+        setCaptchaChallenge(res.data.challenge);
+        setCaptchaAnswer('');
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    void refreshCaptcha();
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -51,7 +72,7 @@ export default function DiscussNewPage() {
       return;
     }
 
-    if (!t || !c) {
+    if (!t || !c || !captchaAnswer) {
       toast({ title: '标题和内容不能为空', status: 'warning', duration: 2000, isClosable: true });
       return;
     }
@@ -63,6 +84,8 @@ export default function DiscussNewPage() {
         content: c,
         tags,
         problem_id: linkedProblemId > 0 ? linkedProblemId : 0,
+        captcha_id: captchaId,
+        captcha_answer: captchaAnswer,
       });
       if (res.code === 0) {
         toast({ title: '发帖成功', status: 'success', duration: 2000, isClosable: true });
@@ -70,6 +93,7 @@ export default function DiscussNewPage() {
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '发帖失败';
+      refreshCaptcha();
       toast({ title: '发帖失败', description: message, status: 'error', duration: 3000, isClosable: true });
     } finally {
       setSubmitting(false);
@@ -135,6 +159,18 @@ export default function DiscussNewPage() {
             />
           </FormControl>
         )}
+
+        <FormControl isRequired>
+          <FormLabel>验证码</FormLabel>
+          <Button size="sm" variant="outline" mb={2} onClick={refreshCaptcha}>
+            {captchaChallenge || '加载验证码中...'}
+          </Button>
+          <Input
+            placeholder="请输入计算结果"
+            value={captchaAnswer}
+            onChange={(e) => setCaptchaAnswer(e.target.value)}
+          />
+        </FormControl>
 
         <Button type="submit" colorScheme="blue" alignSelf="flex-end" isLoading={submitting} loadingText="发布中">
           发布

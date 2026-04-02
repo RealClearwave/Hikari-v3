@@ -1,6 +1,7 @@
 import { db } from "@/server/db";
 import { fail, success } from "@/server/response";
 import { hashPassword } from "@/server/password";
+import { verifyCaptcha } from "@/server/captcha";
 
 export async function POST(req: Request) {
   try {
@@ -8,6 +9,12 @@ export async function POST(req: Request) {
     const username = String(body?.username || "").trim();
     const password = String(body?.password || "");
     const email = String(body?.email || "").trim();
+    const captchaId = String(body?.captcha_id || "");
+    const captchaAnswer = String(body?.captcha_answer || "");
+
+    if (!verifyCaptcha(captchaId, captchaAnswer)) {
+      return fail("invalid captcha", 400);
+    }
 
     if (username.length < 3 || username.length > 32) {
       return fail("invalid username", 400);

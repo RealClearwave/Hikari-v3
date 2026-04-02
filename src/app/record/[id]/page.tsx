@@ -5,6 +5,7 @@ import { Avatar, Badge, Box, Code, Divider, Flex, Heading, HStack, Spinner, Stac
 import NextLink from 'next/link';
 import { useParams } from 'next/navigation';
 import { getRecordDetail, RecordDetail } from '@/api/record';
+import UserName from '@/components/UserName';
 
 const statusMeta: Record<number, { label: string; color: string }> = {
   0: { label: 'Pending', color: 'gray' },
@@ -110,9 +111,13 @@ export default function RecordDetailPage() {
             <Text color="gray.500" fontSize="sm">用户</Text>
             <HStack spacing={3}>
               <Avatar size="sm" name={record.username} src={record.avatar || undefined} />
-              <Text fontWeight="bold" color="purple.600" as={NextLink} href={`/user/profile?uid=${record.user_id}`}>
-                {record.username}
-              </Text>
+              <UserName
+                username={record.username}
+                userId={record.user_id}
+                role={record.role}
+                badge={record.badge}
+                acceptedCount={record.accepted_count}
+              />
             </HStack>
           </Box>
           <Box flex={1}>

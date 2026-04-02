@@ -18,18 +18,39 @@ import NextLink from 'next/link';
 import { useRouter } from 'next/navigation';
 import { login } from '@/api/user';
 import { useAuthStore } from '@/store/auth';
+import { getCaptcha } from '@/api/captcha';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [captchaId, setCaptchaId] = useState('');
+  const [captchaChallenge, setCaptchaChallenge] = useState('');
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [loading, setLoading] = useState(false);
   const toast = useToast();
   const router = useRouter();
   const loginAction = useAuthStore((state) => state.login);
 
+  const refreshCaptcha = async () => {
+    try {
+      const res = await getCaptcha();
+      if (res.code === 0) {
+        setCaptchaId(res.data.captcha_id);
+        setCaptchaChallenge(res.data.challenge);
+        setCaptchaAnswer('');
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  React.useEffect(() => {
+    refreshCaptcha();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username || !password) {
+    if (!username || !password || !captchaAnswer) {
       toast({
         title: 'Error',
         description: 'Please fill in all fields',
@@ -42,7 +63,7 @@ const Login: React.FC = () => {
 
     setLoading(true);
     try {
-      const res = await login({ username, password });
+      const res = await login({ username, password, captcha_id: captchaId, captcha_answer: captchaAnswer });
       if (res.code === 0) {
         loginAction(res.data.user, res.data.token);
         toast({
@@ -64,6 +85,7 @@ const Login: React.FC = () => {
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Login failed';
+      refreshCaptcha();
       toast({
         title: 'Error',
         description: message,
@@ -99,6 +121,19 @@ const Login: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
+            />
+          </FormControl>
+
+          <FormControl isRequired>
+            <FormLabel>Captcha</FormLabel>
+            <Button size="sm" variant="outline" mb={2} onClick={refreshCaptcha}>
+              {captchaChallenge || 'Loading captcha...'}
+            </Button>
+            <Input
+              type="text"
+              value={captchaAnswer}
+              onChange={(e) => setCaptchaAnswer(e.target.value)}
+              placeholder="Enter result"
             />
           </FormControl>
 

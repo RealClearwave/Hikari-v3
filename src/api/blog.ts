@@ -23,9 +23,16 @@ export interface CreateBlogPayload {
   content: string;
   tags?: string[];
   problem_id?: number;
+  captcha_id: string;
+  captcha_answer: string;
 }
 
-export interface UpdateBlogPayload extends CreateBlogPayload {}
+export interface UpdateBlogPayload {
+  title: string;
+  content: string;
+  tags?: string[];
+  problem_id?: number;
+}
 
 export interface CreateBlogResponse {
   id: number;
@@ -49,6 +56,9 @@ export const createBlog = (payload: CreateBlogPayload): Promise<ApiResponse<Crea
 export interface BlogDetail extends BlogItem {
   username: string;
   avatar: string;
+  role: number;
+  badge: string;
+  accepted_count: number;
 }
 
 export const getBlogDetail = (id: number): Promise<ApiResponse<BlogDetail>> => {
@@ -72,6 +82,9 @@ export interface BlogReplyItem {
   updated_at: string;
   username: string;
   avatar: string;
+  role: number;
+  badge: string;
+  accepted_count: number;
 }
 
 export interface BlogReplyListResponse {
@@ -80,6 +93,8 @@ export interface BlogReplyListResponse {
 
 export interface CreateBlogReplyPayload {
   content: string;
+  captcha_id: string;
+  captcha_answer: string;
 }
 
 export interface CreateBlogReplyResponse {

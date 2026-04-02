@@ -1,6 +1,8 @@
 import { db } from "@/server/db";
 import { fail, success } from "@/server/response";
 import { parseAuthorizationHeader, verifyToken } from "@/server/auth";
+import { verifyCaptcha } from "@/server/captcha";
+import { ensureUserMetaColumns } from "@/server/user_meta";
 
 async function ensureReplyTable() {
   await db.query(`
@@ -21,6 +23,7 @@ async function ensureReplyTable() {
 export async function GET(_: Request, context: { params: Promise<{ id: string }> }) {
   try {
     await ensureReplyTable();
+    await ensureUserMetaColumns();
 
     const { id } = await context.params;
     const articleId = Number(id);
@@ -38,9 +41,17 @@ export async function GET(_: Request, context: { params: Promise<{ id: string }>
         r.created_at,
         r.updated_at,
         COALESCE(u.username, '') AS username,
-        COALESCE(u.avatar, '') AS avatar
+        COALESCE(u.avatar, '') AS avatar,
+        COALESCE(u.role, 0) AS role,
+        COALESCE(u.badge, '') AS badge,
+        COALESCE(us.accepted_count, 0) AS accepted_count
       FROM article_replies r
       LEFT JOIN users u ON u.id = r.user_id
+      LEFT JOIN (
+        SELECT user_id, SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS accepted_count
+        FROM records
+        GROUP BY user_id
+      ) us ON us.user_id = r.user_id
       WHERE r.article_id = ? AND r.deleted_at IS NULL
       ORDER BY r.id ASC
       `,
@@ -71,6 +82,13 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
 
     const body = await req.json();
     const content = String(body?.content || "").trim();
+    const captchaId = String(body?.captcha_id || "");
+    const captchaAnswer = String(body?.captcha_answer || "");
+
+    if (!verifyCaptcha(captchaId, captchaAnswer)) {
+      return fail("invalid captcha", 400);
+    }
+
     if (!content) {
       return fail("content is required", 400);
     }

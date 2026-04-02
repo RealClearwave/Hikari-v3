@@ -6,6 +6,7 @@ export interface User {
   email: string;
   avatar: string;
   role: number;
+  badge: string;
   rating: number;
   created_at: string;
   updated_at: string;
@@ -19,12 +20,16 @@ export interface LoginResponse {
 export interface LoginPayload {
   username: string;
   password: string;
+  captcha_id: string;
+  captcha_answer: string;
 }
 
 export interface RegisterPayload {
   username: string;
   password: string;
   email: string;
+  captcha_id: string;
+  captcha_answer: string;
 }
 
 export const login = (data: LoginPayload): Promise<ApiResponse<LoginResponse>> => {
@@ -39,6 +44,7 @@ export interface UpdateProfilePayload {
   username: string;
   email: string;
   avatar: string;
+  badge?: string;
 }
 
 export const getMyProfile = (): Promise<ApiResponse<User>> => {
@@ -55,10 +61,31 @@ export const getUserDetail = (id: number): Promise<ApiResponse<UserDetail>> => {
   return request.get(`/user/${id}`);
 };
 
+export interface AdminManageUserPayload {
+  username: string;
+  email: string;
+  avatar: string;
+  role: 0 | 1;
+  badge?: string;
+}
+
+export const adminUpdateUser = (
+  id: number,
+  payload: AdminManageUserPayload,
+): Promise<ApiResponse<UserDetail>> => {
+  return request.put(`/user/${id}`, payload);
+};
+
+export const adminDeleteUser = (id: number): Promise<ApiResponse<{ ok: boolean }>> => {
+  return request.delete(`/user/${id}`);
+};
+
 export interface UserRankRow {
   userId: number;
   username: string;
   avatar: string;
+  role: number;
+  badge: string;
   rating: number;
   accepted: number;
   submissions: number;

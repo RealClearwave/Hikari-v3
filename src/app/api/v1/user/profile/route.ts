@@ -1,6 +1,7 @@
 import { db } from "@/server/db";
 import { parseAuthorizationHeader, verifyToken } from "@/server/auth";
 import { fail, success } from "@/server/response";
+import { ensureUserMetaColumns } from "@/server/user_meta";
 
 interface UserRow {
   id: number;
@@ -8,6 +9,7 @@ interface UserRow {
   email: string;
   avatar: string;
   role: number;
+  badge: string;
   rating: number;
   created_at: string;
   updated_at: string;
@@ -21,13 +23,15 @@ function parseClaims(req: Request) {
 
 export async function GET(req: Request) {
   try {
+    await ensureUserMetaColumns();
+
     const claims = parseClaims(req);
     if (!claims?.user_id) {
       return fail("unauthorized", 401);
     }
 
     const [rows] = await db.query(
-      "SELECT id, username, email, avatar, role, rating, created_at, updated_at FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1",
+      "SELECT id, username, email, avatar, role, badge, rating, created_at, updated_at FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1",
       [claims.user_id],
     );
     const user = Array.isArray(rows) && rows.length > 0 ? (rows[0] as UserRow) : null;
@@ -43,6 +47,8 @@ export async function GET(req: Request) {
 
 export async function PUT(req: Request) {
   try {
+    await ensureUserMetaColumns();
+
     const claims = parseClaims(req);
     if (!claims?.user_id) {
       return fail("unauthorized", 401);
@@ -52,6 +58,7 @@ export async function PUT(req: Request) {
     const username = String(body?.username || "").trim();
     const email = String(body?.email || "").trim();
     const avatar = String(body?.avatar || "").trim();
+    const badge = String(body?.badge || "").trim();
 
     if (!username || !email) {
       return fail("username and email are required", 400);
@@ -65,6 +72,9 @@ export async function PUT(req: Request) {
     if (avatar.length > 255) {
       return fail("avatar url is too long", 400);
     }
+    if (badge.length > 64) {
+      return fail("badge is too long", 400);
+    }
 
     const [dupRows] = await db.query(
       "SELECT id FROM users WHERE (username = ? OR email = ?) AND id <> ? AND deleted_at IS NULL LIMIT 1",
@@ -74,13 +84,15 @@ export async function PUT(req: Request) {
       return fail("username or email already exists", 409);
     }
 
+    const nextBadge = claims.role === 1 ? badge : "";
+
     await db.query(
-      "UPDATE users SET username = ?, email = ?, avatar = ?, updated_at = NOW() WHERE id = ?",
-      [username, email, avatar, claims.user_id],
+      "UPDATE users SET username = ?, email = ?, avatar = ?, badge = ?, updated_at = NOW() WHERE id = ?",
+      [username, email, avatar, nextBadge, claims.user_id],
     );
 
     const [rows] = await db.query(
-      "SELECT id, username, email, avatar, role, rating, created_at, updated_at FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1",
+      "SELECT id, username, email, avatar, role, badge, rating, created_at, updated_at FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1",
       [claims.user_id],
     );
     const user = Array.isArray(rows) && rows.length > 0 ? (rows[0] as UserRow) : null;

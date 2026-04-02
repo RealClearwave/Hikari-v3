@@ -5,12 +5,17 @@ import { Box, Heading, Text, Avatar, Flex, VStack, HStack, Divider, Badge, Butto
 import { useParams, useRouter } from 'next/navigation';
 import { BlogDetail, BlogReplyItem, createBlogReply, deleteBlog, deleteBlogReply, getBlogDetail, getBlogReplyList } from '@/api/blog';
 import { useAuthStore } from '@/store/auth';
+import { getCaptcha } from '@/api/captcha';
+import UserName from '@/components/UserName';
 
 export default function DiscussDetail() {
   const { id } = useParams<{ id: string }>();
   const [blog, setBlog] = useState<BlogDetail | null>(null);
   const [replies, setReplies] = useState<BlogReplyItem[]>([]);
   const [replyContent, setReplyContent] = useState('');
+  const [captchaId, setCaptchaId] = useState('');
+  const [captchaChallenge, setCaptchaChallenge] = useState('');
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [deletingPost, setDeletingPost] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -18,6 +23,19 @@ export default function DiscussDetail() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const currentUser = useAuthStore((state) => state.user);
+
+  const refreshCaptcha = useCallback(async () => {
+    try {
+      const res = await getCaptcha();
+      if (res.code === 0) {
+        setCaptchaId(res.data.captcha_id);
+        setCaptchaChallenge(res.data.challenge);
+        setCaptchaAnswer('');
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const loadData = useCallback(async () => {
     const blogId = Number(id);
@@ -50,6 +68,10 @@ export default function DiscussDetail() {
     loadData();
   }, [loadData]);
 
+  useEffect(() => {
+    void refreshCaptcha();
+  }, [refreshCaptcha]);
+
   const handleSubmitReply = useCallback(async () => {
     const blogId = Number(id);
     if (!Number.isFinite(blogId) || blogId <= 0) {
@@ -57,7 +79,7 @@ export default function DiscussDetail() {
     }
 
     const content = replyContent.trim();
-    if (!content) {
+    if (!content || !captchaAnswer) {
       toast({ title: '回复内容不能为空', status: 'warning', duration: 2000, isClosable: true });
       return;
     }
@@ -68,9 +90,14 @@ export default function DiscussDetail() {
 
     setSubmitting(true);
     try {
-      const res = await createBlogReply(blogId, { content });
+      const res = await createBlogReply(blogId, {
+        content,
+        captcha_id: captchaId,
+        captcha_answer: captchaAnswer,
+      });
       if (res.code === 0) {
         setReplyContent('');
+        setCaptchaAnswer('');
         const replyRes = await getBlogReplyList(blogId);
         if (replyRes.code === 0) {
           setReplies(replyRes.data.list);
@@ -79,6 +106,7 @@ export default function DiscussDetail() {
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '发布失败';
+      refreshCaptcha();
       toast({ title: '发布回复失败', description: message, status: 'error', duration: 3000, isClosable: true });
     } finally {
       setSubmitting(false);
@@ -161,7 +189,13 @@ export default function DiscussDetail() {
           <HStack spacing={4}>
             <Avatar size="md" name={blog.username} src={blog.avatar || undefined} />
             <Box>
-              <Text fontWeight="bold" color="purple.600">{blog.username}</Text>
+              <UserName
+                username={blog.username}
+                userId={blog.user_id}
+                role={blog.role}
+                badge={blog.badge}
+                acceptedCount={blog.accepted_count}
+              />
               <Text fontSize="sm" color="gray.500">发表于 {new Date(blog.created_at).toLocaleString()}</Text>
             </Box>
           </HStack>
@@ -214,7 +248,14 @@ export default function DiscussDetail() {
               <Flex justify="space-between" mb={3}>
                 <HStack spacing={3}>
                   <Avatar size="sm" name={reply.username} src={reply.avatar || undefined} />
-                  <Text fontWeight="bold" color="purple.500" fontSize="sm">{reply.username}</Text>
+                  <UserName
+                    username={reply.username}
+                    userId={reply.user_id}
+                    role={reply.role}
+                    badge={reply.badge}
+                    acceptedCount={reply.accepted_count}
+                    fontSize="sm"
+                  />
                 </HStack>
                 <HStack spacing={3}>
                   <Text fontSize="xs" color="gray.500">#{idx + 1} 回复于 {new Date(reply.created_at).toLocaleString()}</Text>
@@ -241,6 +282,16 @@ export default function DiscussDetail() {
           mb={4}
           value={replyContent}
           onChange={(e) => setReplyContent(e.target.value)}
+        />
+        <Button size="sm" variant="outline" mb={2} onClick={refreshCaptcha}>
+          {captchaChallenge || '加载验证码中...'}
+        </Button>
+        <Textarea
+          placeholder="请输入验证码计算结果"
+          rows={1}
+          mb={4}
+          value={captchaAnswer}
+          onChange={(e) => setCaptchaAnswer(e.target.value)}
         />
         <Flex justify="flex-end">
           <Button colorScheme="blue" onClick={handleSubmitReply} isLoading={submitting} loadingText="发布中">

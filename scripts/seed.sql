@@ -3,17 +3,18 @@ USE `ojv3`;
 START TRANSACTION;
 
 -- Users (passwords: admin123 / user123)
-INSERT INTO `users` (`id`, `username`, `password_hash`, `email`, `avatar`, `role`, `rating`)
+INSERT INTO `users` (`id`, `username`, `password_hash`, `email`, `avatar`, `role`, `badge`, `rating`)
 VALUES
-  (1, 'admin', '$2b$10$j4oGGcgx9zop4NwrlYOR3OqTwHXrzMLutmT20bayn.a6/.g711GK2', 'admin@example.com', '', 1, 2100),
-  (2, 'alice', '$2b$10$RgJj21fC0Wd8tv6Z2ww7zeYbRIm1T9fKfS9bjIxvvNTn9RzN4p4.2', 'alice@example.com', '', 0, 1680),
-  (3, 'bob', '$2b$10$RgJj21fC0Wd8tv6Z2ww7zeYbRIm1T9fKfS9bjIxvvNTn9RzN4p4.2', 'bob@example.com', '', 0, 1550)
+  (1, 'admin', '$2b$10$j4oGGcgx9zop4NwrlYOR3OqTwHXrzMLutmT20bayn.a6/.g711GK2', 'admin@example.com', '', 1, '官方认证', 2100),
+  (2, 'alice', '$2b$10$RgJj21fC0Wd8tv6Z2ww7zeYbRIm1T9fKfS9bjIxvvNTn9RzN4p4.2', 'alice@example.com', '', 0, '', 1680),
+  (3, 'bob', '$2b$10$RgJj21fC0Wd8tv6Z2ww7zeYbRIm1T9fKfS9bjIxvvNTn9RzN4p4.2', 'bob@example.com', '', 0, '', 1550)
 ON DUPLICATE KEY UPDATE
   `username` = VALUES(`username`),
   `password_hash` = VALUES(`password_hash`),
   `email` = VALUES(`email`),
   `avatar` = VALUES(`avatar`),
   `role` = VALUES(`role`),
+  `badge` = VALUES(`badge`),
   `rating` = VALUES(`rating`);
 
 -- Problems

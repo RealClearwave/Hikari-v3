@@ -13,6 +13,9 @@ export interface RecordItem {
   created_at: string;
   username?: string;
   avatar?: string;
+  role?: number;
+  badge?: string;
+  accepted_count?: number;
 }
 
 export interface RecordStats {
@@ -30,6 +33,8 @@ export interface SubmitRecordPayload {
   contest_id?: number;
   language: string;
   code: string;
+  captcha_id: string;
+  captcha_answer: string;
   status?: number;
   time_used?: number;
   memory_used?: number;
@@ -55,6 +60,9 @@ export interface RecordDetail {
   created_at: string;
   username: string;
   avatar: string;
+  role: number;
+  badge: string;
+  accepted_count: number;
   problem_title: string;
 }
 

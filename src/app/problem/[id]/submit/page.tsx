@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Badge, Box, Button, Code, Flex, Heading, HStack, Progress, Select, Spinner, Stack, Text, Textarea, VStack, useToast } from '@chakra-ui/react';
+import { Badge, Box, Button, Code, Flex, Heading, HStack, Input, Progress, Select, Spinner, Stack, Text, Textarea, VStack, useToast } from '@chakra-ui/react';
 import { useParams, useRouter } from 'next/navigation';
 import { getProblemDetail, Problem } from '@/api/problem';
 import { submitRecord } from '@/api/record';
+import { getCaptcha } from '@/api/captcha';
 
 type SampleCase = {
   input: string;
@@ -67,9 +68,25 @@ export default function ProblemSubmitPage() {
   const [verdict, setVerdict] = useState<Verdict>('idle');
   const [resultText, setResultText] = useState('等待提交后进行评测。');
   const [recordId, setRecordId] = useState<number | null>(null);
+  const [captchaId, setCaptchaId] = useState('');
+  const [captchaChallenge, setCaptchaChallenge] = useState('');
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
 
   const problemId = Number(id);
   const sampleCases = useMemo(() => parseSampleCases(problem), [problem]);
+
+  const refreshCaptcha = async () => {
+    try {
+      const res = await getCaptcha();
+      if (res.code === 0) {
+        setCaptchaId(res.data.captcha_id);
+        setCaptchaChallenge(res.data.challenge);
+        setCaptchaAnswer('');
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -108,6 +125,10 @@ export default function ProblemSubmitPage() {
     };
   }, [problemId, toast]);
 
+  useEffect(() => {
+    void refreshCaptcha();
+  }, []);
+
   const saveRecordAndGo = async (payload: {
     status: number;
     timeUsed: number;
@@ -120,6 +141,8 @@ export default function ProblemSubmitPage() {
       problem_id: problemId,
       language,
       code,
+      captcha_id: captchaId,
+      captcha_answer: captchaAnswer,
       status: payload.status,
       time_used: payload.timeUsed,
       memory_used: 0,
@@ -158,6 +181,11 @@ export default function ProblemSubmitPage() {
 
     if (!sampleCases.length) {
       toast({ title: '题目没有可用样例', status: 'error', duration: 3000 });
+      return;
+    }
+
+    if (!captchaAnswer.trim()) {
+      toast({ title: '请先完成验证码', status: 'warning', duration: 3000 });
       return;
     }
 
@@ -218,6 +246,7 @@ export default function ProblemSubmitPage() {
       const failure = classifyFailure(message);
       setVerdict(failure.verdict);
       setResultText(`${failure.label}\n\n${message}`);
+      void refreshCaptcha();
 
       try {
         await saveRecordAndGo({
@@ -292,6 +321,20 @@ export default function ProblemSubmitPage() {
             placeholder="// 在这里输入你的 C/C++ 代码..."
             minH="300px"
             fontFamily="monospace"
+            isDisabled={verdict === 'compiling' || verdict === 'judging' || verdict === 'saving'}
+          />
+        </Box>
+
+        <Box>
+          <Text fontWeight="bold" mb={2}>验证码</Text>
+          <Button size="sm" variant="outline" mb={2} onClick={refreshCaptcha}>
+            {captchaChallenge || '加载验证码中...'}
+          </Button>
+          <Input
+            value={captchaAnswer}
+            onChange={(e) => setCaptchaAnswer(e.target.value)}
+            placeholder="请输入计算结果"
+            maxW="240px"
             isDisabled={verdict === 'compiling' || verdict === 'judging' || verdict === 'saving'}
           />
         </Box>
