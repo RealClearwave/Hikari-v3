@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
     const passwordHash = await hashPassword(password);
     await db.query(
-      "INSERT INTO users (username, password_hash, email, role, rating, avatar, created_at, updated_at) VALUES (?, ?, ?, 0, 1500, '', NOW(), NOW())",
+      "INSERT INTO users (username, password_hash, email, role, rating, avatar, created_at, updated_at) VALUES (?, ?, ?, 0, 1500, '', datetime('now'), datetime('now'))",
       [username, passwordHash, email],
     );
 

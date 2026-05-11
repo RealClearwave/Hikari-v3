@@ -40,7 +40,10 @@ import { getBlogList, BlogItem } from '@/api/blog';
 import { getContestList } from '@/api/contest';
 import { getProblemList } from '@/api/problem';
 import { getRecordList, RecordItem } from '@/api/record';
+import { streamAiResponse } from '@/api/ai-stream';
+import { RecommendedProblem } from '@/api/ai';
 import UserName from '@/components/UserName';
+import { useAuthStore } from '@/store/auth';
 
 interface RankItem {
   userId: number;
@@ -60,6 +63,11 @@ export default function HomePage() {
   const [records, setRecords] = useState<RecordItem[]>([]);
   const [problemTotal, setProblemTotal] = useState(0);
   const [contestTotal, setContestTotal] = useState(0);
+
+  // AI recommendations
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const [recommendations, setRecommendations] = useState<RecommendedProblem[]>([]);
+  const [recLoading, setRecLoading] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -86,6 +94,32 @@ export default function HomePage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const loadRecs = async () => {
+      setRecLoading(true);
+      try {
+        const fullText = await streamAiResponse("/ai/recommend", {}, () => {
+          // Recommendations output is JSON — don't show tokens, parse at end
+        });
+        try {
+          const jsonStr = fullText.replace(/```json\s?/g, "").replace(/```\s?/g, "").trim();
+          const parsed = JSON.parse(jsonStr);
+          if (Array.isArray(parsed)) {
+            setRecommendations(parsed);
+          }
+        } catch {
+          // Ignore parse errors
+        }
+      } catch {
+        // Silently fail - recommendations are optional
+      } finally {
+        setRecLoading(false);
+      }
+    };
+    loadRecs();
+  }, [isAuthenticated]);
 
   const ranking = useMemo(() => {
     const map = new Map<number, RankItem>();
@@ -236,6 +270,50 @@ export default function HomePage() {
                     <Text color="gray.500" fontSize="sm">基于最近 {records.length} 条提交记录统计</Text>
                   </CardBody>
                 </Card>
+
+                {isAuthenticated && (
+                  <Card borderColor="blue.200" borderWidth={1}>
+                    <CardBody>
+                      <HStack mb={3}>
+                        <Icon as={FiCpu} color="blue.500" />
+                        <Heading size="sm">AI 智能推荐</Heading>
+                        <Badge colorScheme="blue" variant="outline" fontSize="xs">AI</Badge>
+                      </HStack>
+                      {recLoading ? (
+                        <Flex justify="center" py={4}><Spinner size="sm" /></Flex>
+                      ) : recommendations.length > 0 ? (
+                        <List spacing={2}>
+                          {recommendations.map((rec) => {
+                            const diffColor = rec.difficulty === 1 ? 'green' : rec.difficulty === 2 ? 'yellow' : 'red';
+                            const diffLabel = rec.difficulty === 1 ? '简单' : rec.difficulty === 2 ? '中等' : '困难';
+                            return (
+                              <ListItem key={rec.id}>
+                                <Link
+                                  as={NextLink}
+                                  href={`/problem/${rec.id}`}
+                                  color="blue.600"
+                                  fontSize="sm"
+                                  fontWeight="500"
+                                  _hover={{ textDecoration: 'underline' }}
+                                >
+                                  <HStack spacing={2}>
+                                    <Badge colorScheme={diffColor} fontSize="xs">{diffLabel}</Badge>
+                                    <Text>#{rec.id} {rec.title}</Text>
+                                  </HStack>
+                                </Link>
+                                <Text color="gray.500" fontSize="xs" ml={1} mt={0.5}>
+                                  {rec.reason}
+                                </Text>
+                              </ListItem>
+                            );
+                          })}
+                        </List>
+                      ) : (
+                        <Text color="gray.400" fontSize="sm">登录后查看个性化推荐</Text>
+                      )}
+                    </CardBody>
+                  </Card>
+                )}
               </VStack>
             </GridItem>
           </Grid>

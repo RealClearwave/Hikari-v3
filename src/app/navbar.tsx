@@ -120,6 +120,11 @@ export default function Navbar() {
                   <MenuItem as={NextLink} href="/user/edit">
                     修改信息
                   </MenuItem>
+                  {currentUser.role === 1 && (
+                    <MenuItem as={NextLink} href="/admin/ai-config">
+                      AI 功能配置
+                    </MenuItem>
+                  )}
                   <MenuItem onClick={handleLogout}>
                     登出
                   </MenuItem>

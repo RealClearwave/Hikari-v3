@@ -4,10 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Badge,
   Box,
+  Button,
   Flex,
   Grid,
   GridItem,
   Heading,
+  HStack,
   Link,
   Progress,
   Spinner,
@@ -28,7 +30,9 @@ import {
 import NextLink from 'next/link';
 import { useParams } from 'next/navigation';
 import { ContestDetailResponse, getContestDetail } from '@/api/contest';
+import { streamAiResponse } from '@/api/ai-stream';
 import UserName from '@/components/UserName';
+import { FiCpu } from 'react-icons/fi';
 
 function statusText(status: number) {
   const map: Record<number, { text: string; scheme: string }> = {
@@ -60,6 +64,10 @@ export default function ContestDetailPage() {
   const [loading, setLoading] = useState(true);
   const toast = useToast();
 
+  // AI states
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+  const [aiAnalyzing, setAiAnalyzing] = useState(false);
+
   const contestId = Number(id);
 
   const loadData = useCallback(async () => {
@@ -85,6 +93,21 @@ export default function ContestDetailPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const handleAnalyzeContest = useCallback(async () => {
+    setAiAnalyzing(true);
+    setAiAnalysis("");
+    try {
+      await streamAiResponse("/ai/contest-analysis", { contestId }, (token) => {
+        setAiAnalysis((prev) => (prev || "") + token);
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'AI 分析失败';
+      toast({ title: msg, status: 'error', duration: 3000 });
+    } finally {
+      setAiAnalyzing(false);
+    }
+  }, [contestId, toast]);
 
   const contest = data?.contest;
   const status = contest ? calcContestStatus(contest.start_time, contest.end_time) : null;
@@ -174,7 +197,43 @@ export default function ContestDetailPage() {
             <TabPanel p={6}>
               <Heading size="md" mb={4}>比赛介绍</Heading>
               <Text mb={4} whiteSpace="pre-wrap">{contest.description || '暂无比赛描述。'}</Text>
-              <Text color="gray.500">当前比赛包含 {data.problems.length} 道题目，已产生 {data.submissions.length} 条提交记录。</Text>
+              <Text color="gray.500" mb={6}>当前比赛包含 {data.problems.length} 道题目，已产生 {data.submissions.length} 条提交记录。</Text>
+
+              {/* AI Contest Analysis */}
+              {status.text === '已结束' && (
+                <Box p={4} bg="purple.50" borderRadius="md" borderWidth={1} borderColor="purple.200">
+                  <HStack mb={3} spacing={2}>
+                    <FiCpu color="#805AD5" />
+                    <Text fontWeight="700" color="purple.700">AI 赛后分析</Text>
+                  </HStack>
+                  <Text fontSize="sm" color="gray.600" mb={3}>
+                    比赛已结束，让 AI 为你分析本场比赛的题目难度、常见错误和排行榜亮点。
+                  </Text>
+                  <Button
+                    size="sm"
+                    colorScheme="purple"
+                    leftIcon={<FiCpu />}
+                    onClick={handleAnalyzeContest}
+                    isLoading={aiAnalyzing}
+                    loadingText="AI 分析中..."
+                  >
+                    生成赛后分析
+                  </Button>
+
+                  {aiAnalysis && (
+                    <Box mt={4} p={4} bg="white" borderRadius="md" borderWidth={1} borderColor="purple.200">
+                      <HStack mb={3} spacing={2}>
+                        <FiCpu color="#805AD5" />
+                        <Text fontWeight="700" color="purple.700">AI 赛后分析报告</Text>
+                        <Badge colorScheme="purple" variant="outline">AI</Badge>
+                      </HStack>
+                      <Text color="gray.800" whiteSpace="pre-wrap" fontSize="sm" lineHeight="tall">
+                        {aiAnalysis}
+                      </Text>
+                    </Box>
+                  )}
+                </Box>
+              )}
             </TabPanel>
 
             <TabPanel p={0}>

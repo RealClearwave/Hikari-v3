@@ -123,7 +123,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     }
 
     await db.query(
-      "UPDATE articles SET title = ?, content = ?, type = ?, problem_id = ?, tags = ?, updated_at = NOW() WHERE id = ?",
+      "UPDATE articles SET title = ?, content = ?, type = ?, problem_id = ?, tags = ?, updated_at = datetime('now') WHERE id = ?",
       [title, content, type, problemId, stringifyTags(tags), articleId],
     );
 

@@ -5,17 +5,17 @@ import { parseAuthorizationHeader, verifyToken } from "@/server/auth";
 async function ensureReplyTable() {
   await db.query(`
     CREATE TABLE IF NOT EXISTS article_replies (
-      id BIGINT AUTO_INCREMENT PRIMARY KEY,
-      article_id BIGINT NOT NULL,
-      user_id BIGINT NOT NULL,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      article_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
       content TEXT NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      deleted_at TIMESTAMP NULL DEFAULT NULL,
-      INDEX idx_article_id (article_id),
-      INDEX idx_user_id (user_id)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      deleted_at TEXT
+    )
   `);
+  await db.query("CREATE INDEX IF NOT EXISTS idx_article_id ON article_replies (article_id)");
+  await db.query("CREATE INDEX IF NOT EXISTS idx_user_id ON article_replies (user_id)");
 }
 
 export async function DELETE(
@@ -54,7 +54,7 @@ export async function DELETE(
       return fail("forbidden", 403);
     }
 
-    await db.query("UPDATE article_replies SET deleted_at = NOW() WHERE id = ?", [rid]);
+    await db.query("UPDATE article_replies SET deleted_at = datetime('now') WHERE id = ?", [rid]);
     return success({ ok: true });
   } catch {
     return fail("failed to delete reply", 500);

@@ -1,91 +1,90 @@
-CREATE DATABASE IF NOT EXISTS `ojv3` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- OJv3 SQLite Schema
 
-USE `ojv3`;
+-- 1. Users
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  avatar TEXT DEFAULT '',
+  role INTEGER DEFAULT 0,
+  badge TEXT DEFAULT '',
+  rating INTEGER DEFAULT 1500,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  deleted_at TEXT
+);
 
--- 1. 用户表 (Users)
-CREATE TABLE IF NOT EXISTS `users` (
-  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-  `username` VARCHAR(64) NOT NULL UNIQUE,
-  `password_hash` VARCHAR(255) NOT NULL,
-  `email` VARCHAR(128) NOT NULL UNIQUE,
-  `avatar` VARCHAR(255) DEFAULT '',
-  `role` TINYINT DEFAULT 0 COMMENT '0: 普通用户, 1: 管理员',
-  `badge` VARCHAR(64) DEFAULT '' COMMENT '仅管理员可拥有徽章',
-  `rating` INT DEFAULT 1500 COMMENT '用户积分/排名依据',
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `deleted_at` TIMESTAMP NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 2. Problems
+CREATE TABLE IF NOT EXISTS problems (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  input_format TEXT,
+  output_format TEXT,
+  sample_cases TEXT,
+  time_limit INTEGER NOT NULL,
+  memory_limit INTEGER NOT NULL,
+  difficulty INTEGER DEFAULT 1,
+  is_public INTEGER DEFAULT 1,
+  created_by INTEGER NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  deleted_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_public ON problems (is_public);
 
--- 2. 题目表 (Problems)
-CREATE TABLE IF NOT EXISTS `problems` (
-  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-  `title` VARCHAR(255) NOT NULL,
-  `description` TEXT NOT NULL,
-  `input_format` TEXT,
-  `output_format` TEXT,
-  `sample_cases` JSON COMMENT '样例输入输出 [{"input": "...", "output": "..."}]',
-  `time_limit` INT NOT NULL COMMENT '时间限制 (ms)',
-  `memory_limit` INT NOT NULL COMMENT '内存限制 (KB)',
-  `difficulty` TINYINT DEFAULT 1 COMMENT '1: 简单, 2: 中等, 3: 困难',
-  `is_public` BOOLEAN DEFAULT TRUE COMMENT '是否对普通用户可见',
-  `created_by` BIGINT NOT NULL COMMENT '创建者 ID',
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `deleted_at` TIMESTAMP NULL DEFAULT NULL,
-  INDEX `idx_public` (`is_public`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 3. Records
+CREATE TABLE IF NOT EXISTS records (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  problem_id INTEGER NOT NULL,
+  contest_id INTEGER DEFAULT 0,
+  language TEXT NOT NULL,
+  code TEXT NOT NULL,
+  status INTEGER DEFAULT 0,
+  time_used INTEGER DEFAULT 0,
+  memory_used INTEGER DEFAULT 0,
+  error_info TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_records_user_id ON records (user_id);
+CREATE INDEX IF NOT EXISTS idx_records_problem_id ON records (problem_id);
+CREATE INDEX IF NOT EXISTS idx_records_contest_id ON records (contest_id);
 
--- 3. 评测记录表 (Records)
-CREATE TABLE IF NOT EXISTS `records` (
-  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-  `user_id` BIGINT NOT NULL,
-  `problem_id` BIGINT NOT NULL,
-  `contest_id` BIGINT DEFAULT 0 COMMENT '非0表示在竞赛中提交',
-  `language` VARCHAR(32) NOT NULL COMMENT 'c, cpp, java, go, python 等',
-  `code` TEXT NOT NULL,
-  `status` TINYINT DEFAULT 0 COMMENT '0: Pending, 1: Judging, 2: AC, 3: WA, 4: TLE, 5: MLE, 6: RE, 7: CE',
-  `time_used` INT DEFAULT 0 COMMENT '执行耗时 (ms)',
-  `memory_used` INT DEFAULT 0 COMMENT '内存消耗 (KB)',
-  `error_info` TEXT COMMENT '编译错误或运行异常信息',
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX `idx_user_id` (`user_id`),
-  INDEX `idx_problem_id` (`problem_id`),
-  INDEX `idx_contest_id` (`contest_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 4. Contests
+CREATE TABLE IF NOT EXISTS contests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  description TEXT,
+  start_time TEXT NOT NULL,
+  end_time TEXT NOT NULL,
+  type INTEGER DEFAULT 0,
+  password TEXT DEFAULT '',
+  created_by INTEGER NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
 
--- 4. 竞赛表 (Contests)
-CREATE TABLE IF NOT EXISTS `contests` (
-  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-  `title` VARCHAR(255) NOT NULL,
-  `description` TEXT,
-  `start_time` TIMESTAMP NOT NULL,
-  `end_time` TIMESTAMP NOT NULL,
-  `type` TINYINT DEFAULT 0 COMMENT '0: ACM, 1: OI',
-  `password` VARCHAR(128) DEFAULT '' COMMENT '留空则为公开赛',
-  `created_by` BIGINT NOT NULL COMMENT '创建人',
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 5. Contest_Problems
+CREATE TABLE IF NOT EXISTS contest_problems (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  contest_id INTEGER NOT NULL,
+  problem_id INTEGER NOT NULL,
+  display_id TEXT NOT NULL,
+  UNIQUE (contest_id, display_id)
+);
 
--- 5. 竞赛_题目 关联表 (Contest_Problems)
-CREATE TABLE IF NOT EXISTS `contest_problems` (
-  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-  `contest_id` BIGINT NOT NULL,
-  `problem_id` BIGINT NOT NULL,
-  `display_id` VARCHAR(16) NOT NULL COMMENT '例如 A, B, C',
-  UNIQUE KEY `uk_contest_display` (`contest_id`, `display_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 6. 博客/讨论表 (Articles)
-CREATE TABLE IF NOT EXISTS `articles` (
-  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-  `user_id` BIGINT NOT NULL,
-  `title` VARCHAR(255) NOT NULL,
-  `content` TEXT NOT NULL,
-  `type` TINYINT DEFAULT 0 COMMENT '0: 博客, 1: 题解, 2: 讨论',
-  `problem_id` BIGINT DEFAULT 0 COMMENT '如果为题解/题目讨论，关联题目ID',
-  `views` INT DEFAULT 0,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 6. Articles
+CREATE TABLE IF NOT EXISTS articles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  type INTEGER DEFAULT 0,
+  problem_id INTEGER DEFAULT 0,
+  views INTEGER DEFAULT 0,
+  tags TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);

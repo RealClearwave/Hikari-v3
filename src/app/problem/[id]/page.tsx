@@ -32,7 +32,9 @@ import { useParams } from 'next/navigation';
 import { BlogItem, getBlogList } from '@/api/blog';
 import { getProblemDetail, Problem } from '@/api/problem';
 import { getRecordList, RecordItem, RecordStats } from '@/api/record';
+import { streamAiResponse } from '@/api/ai-stream';
 import UserName from '@/components/UserName';
+import { FiCpu } from 'react-icons/fi';
 
 function statusText(status: number) {
   const map: Record<number, { text: string; scheme: string }> = {
@@ -68,6 +70,12 @@ export default function ProblemDetail() {
   const [recordStats, setRecordStats] = useState<RecordStats | null>(null);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
+
+  // AI states
+  const [aiSolution, setAiSolution] = useState<string | null>(null);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [acCode, setAcCode] = useState("");
+  const [acLanguage, setAcLanguage] = useState("");
 
   const problemId = Number(id);
 
@@ -108,6 +116,25 @@ export default function ProblemDetail() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const handleGenerateSolution = useCallback(async () => {
+    setAiGenerating(true);
+    setAiSolution("");
+    try {
+      await streamAiResponse("/ai/generate-solution", {
+        problemId,
+        code: acCode || undefined,
+        language: acLanguage || undefined,
+      }, (token) => {
+        setAiSolution((prev) => (prev || "") + token);
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'AI 生成失败';
+      toast({ title: msg, status: 'error', duration: 3000 });
+    } finally {
+      setAiGenerating(false);
+    }
+  }, [problemId, acCode, acLanguage, toast]);
 
   const sampleCases = useMemo<SampleCase[]>(() => {
     if (!problem?.sample_cases) return [];
@@ -324,7 +351,61 @@ export default function ProblemDetail() {
               </TabPanel>
 
               <TabPanel px={0} py={6}>
-                {solutions.length === 0 ? (
+                {/* AI Solution Generation */}
+                <Box mb={6} p={4} bg="blue.50" borderRadius="md" borderWidth={1} borderColor="blue.200">
+                  <HStack mb={3} spacing={2}>
+                    <FiCpu color="#2B6CB0" />
+                    <Text fontWeight="700" color="blue.700">AI 题解生成</Text>
+                  </HStack>
+                  <Text fontSize="sm" color="gray.600" mb={3}>
+                    如果你已经 AC 了这道题，可以粘贴你的 AC 代码让 AI 生成结构化题解。
+                  </Text>
+                  <HStack spacing={2} mb={3}>
+                    <Box
+                      as="textarea"
+                      placeholder="粘贴你的 AC 代码（可选，不填则仅根据题目描述生成思路）"
+                      value={acCode}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setAcCode(e.target.value)}
+                      rows={3}
+                      style={{
+                        width: "100%",
+                        padding: "8px 12px",
+                        borderRadius: "6px",
+                        border: "1px solid #E2E8F0",
+                        fontSize: "14px",
+                        fontFamily: "monospace",
+                        resize: "vertical",
+                      }}
+                    />
+                  </HStack>
+                  <Button
+                    size="sm"
+                    colorScheme="blue"
+                    leftIcon={<FiCpu />}
+                    onClick={handleGenerateSolution}
+                    isLoading={aiGenerating}
+                    loadingText="AI 生成中..."
+                  >
+                    生成 AI 题解
+                  </Button>
+                </Box>
+
+                {/* AI Generated Solution */}
+                {aiSolution && (
+                  <Box mb={6} p={4} bg="white" borderRadius="md" borderWidth={1} borderColor="blue.300" boxShadow="sm">
+                    <HStack mb={3} spacing={2}>
+                      <FiCpu color="#2B6CB0" />
+                      <Text fontWeight="700" color="blue.700">AI 生成的题解</Text>
+                      <Badge colorScheme="blue" variant="outline">AI</Badge>
+                    </HStack>
+                    <Text color="gray.800" whiteSpace="pre-wrap" fontSize="sm" lineHeight="tall">
+                      {aiSolution}
+                    </Text>
+                  </Box>
+                )}
+
+                {/* Existing Solutions */}
+                {solutions.length === 0 && !aiSolution ? (
                   <Text color="gray.500">该题目暂无题解。</Text>
                 ) : (
                   <VStack align="stretch" spacing={3}>

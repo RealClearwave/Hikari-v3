@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "init-db": "node scripts/init-db.js"
   },
   "dependencies": {
     "@chakra-ui/react": "^2.10.9",
@@ -15,9 +16,9 @@
     "@wasmer/wasi": "^1.2.2",
     "axios": "^1.14.0",
     "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.9.0",
     "framer-motion": "^12.38.0",
     "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.20.0",
     "next": "16.2.2",
     "puppeteer": "^24.40.0",
     "react": "19.2.4",
@@ -28,6 +29,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^19",

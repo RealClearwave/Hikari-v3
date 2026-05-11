@@ -36,7 +36,7 @@ export async function POST(req: Request) {
       INSERT INTO problems (
         title, description, input_format, output_format, sample_cases,
         time_limit, memory_limit, difficulty, is_public, created_by, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
       `,
       [title, description, inputFormat, outputFormat, JSON.stringify([]), timeLimit, memoryLimit, difficulty, isPublic, claims.user_id],
     );

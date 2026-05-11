@@ -73,6 +73,34 @@ npm run build
 npm start
 ```
 
+### 5. 一键脚本（Linux 部署 + macOS 打包）
+
+项目已提供两个开箱即用的脚本：
+
+```bash
+# Linux 服务器上一键部署（安装依赖、可选初始化数据库、构建、后台启动）
+bash scripts/deploy_linux.sh
+
+# 如果数据库已初始化，可跳过 DB 步骤
+bash scripts/deploy_linux.sh --skip-db
+
+# macOS 上打包发布文件
+bash scripts/package_macos.sh
+```
+
+如果你是手动在 Linux 上安装依赖（不是走脚本），请使用：
+
+```bash
+PUPPETEER_SKIP_DOWNLOAD=1 npm ci
+```
+
+这可以避免服务器环境因 Puppeteer 下载 Chrome 失败而中断安装。
+
+说明：
+- Linux 部署日志默认输出到 `logs/ojv3.log`。
+- Linux 部署会记录运行 PID 到 `.run/ojv3.pid`。
+- macOS 打包产物默认位于 `release/` 目录。
+
 ---
 
 ## 📁 目录结构与架构设定

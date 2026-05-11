@@ -87,7 +87,7 @@ export async function PUT(req: Request) {
     const nextBadge = claims.role === 1 ? badge : "";
 
     await db.query(
-      "UPDATE users SET username = ?, email = ?, avatar = ?, badge = ?, updated_at = NOW() WHERE id = ?",
+      "UPDATE users SET username = ?, email = ?, avatar = ?, badge = ?, updated_at = datetime('now') WHERE id = ?",
       [username, email, avatar, nextBadge, claims.user_id],
     );
 

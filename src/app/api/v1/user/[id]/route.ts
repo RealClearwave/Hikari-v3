@@ -116,7 +116,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     }
 
     await db.query(
-      "UPDATE users SET username = ?, email = ?, avatar = ?, role = ?, badge = ?, updated_at = NOW() WHERE id = ?",
+      "UPDATE users SET username = ?, email = ?, avatar = ?, role = ?, badge = ?, updated_at = datetime('now') WHERE id = ?",
       [username, email, avatar, role, normalizedBadge, userId],
     );
 
@@ -165,7 +165,7 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
       return fail("user not found", 404);
     }
 
-    await db.query("UPDATE users SET deleted_at = NOW(), updated_at = NOW() WHERE id = ?", [userId]);
+    await db.query("UPDATE users SET deleted_at = datetime('now'), updated_at = datetime('now') WHERE id = ?", [userId]);
 
     return success({ ok: true });
   } catch {

@@ -7,9 +7,11 @@ let ensured = false;
 export async function ensureArticleMetaColumns() {
   if (ensured) return;
 
-  const [tagRows] = await db.query("SHOW COLUMNS FROM articles LIKE 'tags'");
-  if (!Array.isArray(tagRows) || tagRows.length === 0) {
-    await db.query("ALTER TABLE articles ADD COLUMN tags TEXT NULL");
+  const [tagRows] = await db.query("PRAGMA table_info(articles)");
+  const arr = tagRows as Array<{ name: string }>;
+  const hasTags = arr.some((col) => col.name === "tags");
+  if (!hasTags) {
+    await db.query("ALTER TABLE articles ADD COLUMN tags TEXT");
   }
 
   ensured = true;

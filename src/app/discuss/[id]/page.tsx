@@ -6,7 +6,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { BlogDetail, BlogReplyItem, createBlogReply, deleteBlog, deleteBlogReply, getBlogDetail, getBlogReplyList } from '@/api/blog';
 import { useAuthStore } from '@/store/auth';
 import { getCaptcha } from '@/api/captcha';
+import { streamAiResponse } from '@/api/ai-stream';
 import UserName from '@/components/UserName';
+import { FiCpu } from 'react-icons/fi';
 
 export default function DiscussDetail() {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +22,10 @@ export default function DiscussDetail() {
   const [deletingPost, setDeletingPost] = useState(false);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
+
+  // AI summary
+  const [aiSummary, setAiSummary] = useState("");
+  const [aiSummarizing, setAiSummarizing] = useState(false);
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const currentUser = useAuthStore((state) => state.user);
@@ -162,6 +168,23 @@ export default function DiscussDetail() {
     }
   }, [id, toast]);
 
+  const handleSummarize = useCallback(async () => {
+    const articleId = Number(id);
+    if (!Number.isFinite(articleId) || articleId <= 0) return;
+    setAiSummarizing(true);
+    setAiSummary("");
+    try {
+      await streamAiResponse("/ai/summarize-article", { articleId }, (token) => {
+        setAiSummary((prev) => prev + token);
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'AI 总结失败';
+      toast({ title: msg, status: 'error', duration: 3000 });
+    } finally {
+      setAiSummarizing(false);
+    }
+  }, [id, toast]);
+
   return (
     <Box>
       {loading ? (
@@ -201,6 +224,16 @@ export default function DiscussDetail() {
           </HStack>
           <HStack spacing={3}>
             <Text fontSize="sm" color="gray.500">浏览量: {blog.views}</Text>
+            <Button
+              size="sm"
+              colorScheme="purple"
+              variant="outline"
+              leftIcon={<FiCpu />}
+              isLoading={aiSummarizing}
+              onClick={handleSummarize}
+            >
+              AI 总结
+            </Button>
             {(currentUser?.role === 1 || currentUser?.id === blog.user_id) && (
               <Button size="sm" colorScheme="blue" variant="ghost" onClick={() => router.push(`/discuss/${blog.id}/edit`)}>
                 编辑帖子
@@ -235,6 +268,20 @@ export default function DiscussDetail() {
           </Box>
         )}
       </Box>
+
+      {aiSummary && (
+        <Box bg="white" p={8} borderWidth={1} borderColor="purple.200" borderRadius="md" boxShadow="sm" mb={6} borderLeft="4px solid" borderLeftColor="purple.400">
+          <Heading size="md" mb={4} color="purple.600">
+            <HStack spacing={2}>
+              <FiCpu />
+              <Text>AI 总结</Text>
+            </HStack>
+          </Heading>
+          <Text color="gray.700" whiteSpace="pre-wrap" lineHeight="tall">
+            {aiSummary}
+          </Text>
+        </Box>
+      )}
 
       <Box bg="white" p={8} borderWidth={1} borderColor="gray.200" borderRadius="md" boxShadow="sm" mb={6}>
         <Heading size="md" mb={6}>全部回复 ({replies.length})</Heading>

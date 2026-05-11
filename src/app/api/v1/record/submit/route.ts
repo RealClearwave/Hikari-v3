@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       `
       INSERT INTO records (
         user_id, problem_id, contest_id, language, code, status, time_used, memory_used, error_info, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `,
       [claims.user_id, problemId, contestId, language, code, status, timeUsed, memoryUsed, errorInfo],
     );

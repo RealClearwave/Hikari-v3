@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { Avatar, Badge, Box, Code, Divider, Flex, Heading, HStack, Spinner, Stack, Text } from '@chakra-ui/react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Avatar, Badge, Box, Button, Code, Divider, Flex, Heading, HStack, Spinner, Stack, Text, useToast } from '@chakra-ui/react';
 import NextLink from 'next/link';
 import { useParams } from 'next/navigation';
 import { getRecordDetail, RecordDetail } from '@/api/record';
+import { streamAiResponse } from '@/api/ai-stream';
 import UserName from '@/components/UserName';
+import { FiCpu } from 'react-icons/fi';
 
 const statusMeta: Record<number, { label: string; color: string }> = {
   0: { label: 'Pending', color: 'gray' },
@@ -27,6 +29,13 @@ export default function RecordDetailPage() {
   const [record, setRecord] = useState<RecordDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // AI states
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+  const [aiAnalyzing, setAiAnalyzing] = useState(false);
+  const [aiExplanation, setAiExplanation] = useState<string | null>(null);
+  const [aiExplaining, setAiExplaining] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     let active = true;
@@ -68,6 +77,38 @@ export default function RecordDetailPage() {
     };
   }, [id]);
 
+  const handleAnalyzeError = useCallback(async () => {
+    if (!record) return;
+    setAiAnalyzing(true);
+    setAiAnalysis("");
+    try {
+      await streamAiResponse("/ai/analyze-error", { recordId: record.id }, (token) => {
+        setAiAnalysis((prev) => (prev || "") + token);
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'AI 分析失败';
+      toast({ title: msg, status: 'error', duration: 3000 });
+    } finally {
+      setAiAnalyzing(false);
+    }
+  }, [record, toast]);
+
+  const handleExplainCode = useCallback(async () => {
+    if (!record) return;
+    setAiExplaining(true);
+    setAiExplanation("");
+    try {
+      await streamAiResponse("/ai/explain-code", { recordId: record.id }, (token) => {
+        setAiExplanation((prev) => (prev || "") + token);
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'AI 解释失败';
+      toast({ title: msg, status: 'error', duration: 3000 });
+    } finally {
+      setAiExplaining(false);
+    }
+  }, [record, toast]);
+
   if (loading) {
     return (
       <Flex justify="center" py={12}>
@@ -86,6 +127,7 @@ export default function RecordDetailPage() {
   }
 
   const status = statusText(record.status);
+  const showErrorAnalysis = record.status >= 2 && record.status !== 2; // Not pending, judging, or AC
 
   return (
     <Box>
@@ -140,17 +182,74 @@ export default function RecordDetailPage() {
       </Box>
 
       <Box bg="white" p={6} borderWidth={1} borderColor="gray.200" borderRadius="md" boxShadow="sm" mb={6}>
-        <Heading size="md" mb={4} borderLeft="4px solid" borderColor="blue.500" pl={3}>评测结果</Heading>
+        <Flex justify="space-between" align="center" mb={4}>
+          <Heading size="md" borderLeft="4px solid" borderColor="blue.500" pl={3}>评测结果</Heading>
+          {showErrorAnalysis && (
+            <Button
+              size="sm"
+              colorScheme="purple"
+              variant="outline"
+              leftIcon={<FiCpu />}
+              onClick={handleAnalyzeError}
+              isLoading={aiAnalyzing}
+              loadingText="AI 分析中..."
+            >
+              AI 错误分析
+            </Button>
+          )}
+        </Flex>
         <Box p={4} bg="gray.50" borderRadius="md" borderWidth={1} borderColor="gray.200">
           <Text fontWeight="700" color="gray.800" mb={2}>状态: {status.label}</Text>
           <Text color="gray.700" whiteSpace="pre-wrap">
             {record.error_info || '该记录通过了所有数据库样例测试。'}
           </Text>
         </Box>
+
+        {/* AI Error Analysis Result */}
+        {aiAnalysis && (
+          <Box mt={4} p={4} bg="purple.50" borderRadius="md" borderWidth={1} borderColor="purple.200">
+            <HStack mb={3} spacing={2}>
+              <FiCpu color="#805AD5" />
+              <Text fontWeight="700" color="purple.700">AI 错误分析</Text>
+              <Badge colorScheme="purple" variant="outline">AI</Badge>
+            </HStack>
+            <Text color="gray.800" whiteSpace="pre-wrap" fontSize="sm" lineHeight="tall">
+              {aiAnalysis}
+            </Text>
+          </Box>
+        )}
       </Box>
 
       <Box bg="white" p={6} borderWidth={1} borderColor="gray.200" borderRadius="md" boxShadow="sm">
-        <Heading size="md" mb={4} borderLeft="4px solid" borderColor="blue.500" pl={3}>源代码</Heading>
+        <Flex justify="space-between" align="center" mb={4}>
+          <Heading size="md" borderLeft="4px solid" borderColor="blue.500" pl={3}>源代码</Heading>
+          <Button
+            size="sm"
+            colorScheme="teal"
+            variant="outline"
+            leftIcon={<FiCpu />}
+            onClick={handleExplainCode}
+            isLoading={aiExplaining}
+            loadingText="AI 解释中..."
+          >
+            AI 代码解释
+          </Button>
+        </Flex>
+
+        {/* AI Code Explanation Result */}
+        {aiExplanation && (
+          <Box mb={4} p={4} bg="teal.50" borderRadius="md" borderWidth={1} borderColor="teal.200">
+            <HStack mb={3} spacing={2}>
+              <FiCpu color="#319795" />
+              <Text fontWeight="700" color="teal.700">AI 代码解释</Text>
+              <Badge colorScheme="teal" variant="outline">AI</Badge>
+            </HStack>
+            <Text color="gray.800" whiteSpace="pre-wrap" fontSize="sm" lineHeight="tall">
+              {aiExplanation}
+            </Text>
+          </Box>
+        )}
+
         <Divider mb={4} />
         <Box bg="gray.900" p={4} borderRadius="md" overflowX="auto">
           <Code display="block" whiteSpace="pre" bg="transparent" color="gray.100">

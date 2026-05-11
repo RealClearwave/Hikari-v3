@@ -6,18 +6,18 @@ let ensuring: Promise<void> | null = null;
 export async function ensureUserMetaColumns() {
   if (ensured) return;
 
-  // Avoid concurrent ALTER calls under high request concurrency.
   if (ensuring) {
     await ensuring;
     return;
   }
 
   ensuring = (async () => {
-    const [rows] = await db.query("SHOW COLUMNS FROM users LIKE 'badge'");
-    const exists = Array.isArray(rows) && rows.length > 0;
+    const [rows] = await db.query("PRAGMA table_info(users)");
+    const arr = rows as Array<{ name: string }>;
+    const hasBadge = arr.some((col) => col.name === "badge");
 
-    if (!exists) {
-      await db.query("ALTER TABLE users ADD COLUMN badge VARCHAR(64) DEFAULT ''");
+    if (!hasBadge) {
+      await db.query("ALTER TABLE users ADD COLUMN badge TEXT DEFAULT ''");
     }
 
     ensured = true;
