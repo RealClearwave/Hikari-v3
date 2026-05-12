@@ -4,7 +4,7 @@ import { parseAuthorizationHeader, verifyToken } from "@/server/auth";
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
+    const { searchParams } = new URL(req.url, "http://localhost");
     const page = Math.max(1, Number(searchParams.get("page") || 1));
     const size = Math.min(100, Math.max(1, Number(searchParams.get("size") || 20)));
     const keyword = (searchParams.get("keyword") || "").trim();
@@ -14,11 +14,11 @@ export async function GET(req: Request) {
     const isAdmin = claims?.role === 1;
 
     const whereParts: string[] = [];
-    const params: Array<string | number | boolean> = [];
+    const params: Array<string | number> = [];
 
     if (!isAdmin) {
       whereParts.push("is_public = ?");
-      params.push(true);
+      params.push(1);
     }
     if (keyword) {
       whereParts.push("title LIKE ?");

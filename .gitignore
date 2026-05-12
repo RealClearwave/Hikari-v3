@@ -21,7 +21,6 @@
 /build
 
 # misc
-.DS_Store
 *.pem
 
 # debug
@@ -46,6 +45,19 @@ problem_data/
 !eslint.config.mjs
 !postcss.config.mjs
 test_*.js
+
+# local database (SQLite)
+data/
+
+# Claude Code
+.claude/
+
+# secrets / credentials
+*.secret
+*_secret*
+*_private*
+*_key.json
+*.p8
 
 # OS files
 .DS_Store

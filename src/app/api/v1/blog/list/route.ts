@@ -6,7 +6,7 @@ export async function GET(req: Request) {
   try {
     await ensureArticleMetaColumns();
 
-    const { searchParams } = new URL(req.url);
+    const { searchParams } = new URL(req.url, "http://localhost");
     const page = Math.max(1, Number(searchParams.get("page") || 1));
     const size = Math.min(100, Math.max(1, Number(searchParams.get("size") || 20)));
     const type = Number(searchParams.get("type") || -1);
