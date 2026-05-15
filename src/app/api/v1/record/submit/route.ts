@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       return fail("invalid captcha", 400);
     }
 
-    const [result] = await db.query(
+    const [, info] = await db.query(
       `
       INSERT INTO records (
         user_id, problem_id, contest_id, language, code, status, time_used, memory_used, error_info, created_at
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
       [claims.user_id, problemId, contestId, language, code, status, timeUsed, memoryUsed, errorInfo],
     );
 
-    const insertId = typeof result === "object" && result && "insertId" in result ? Number((result as { insertId: number }).insertId) : 0;
+    const insertId = info?.insertId ?? 0;
 
     return success({ id: insertId, status });
   } catch {

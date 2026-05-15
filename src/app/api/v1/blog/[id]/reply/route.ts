@@ -104,12 +104,12 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
       return fail("blog not found", 404);
     }
 
-    const [result] = await db.query(
+    const [, info] = await db.query(
       "INSERT INTO article_replies (article_id, user_id, content) VALUES (?, ?, ?)",
       [articleId, claims.user_id, content],
     );
 
-    const insertId = Number((result as { insertId?: number }).insertId || 0);
+    const insertId = info?.insertId ?? 0;
     return success({ id: insertId });
   } catch {
     return fail("failed to create reply", 500);

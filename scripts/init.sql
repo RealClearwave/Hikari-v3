@@ -88,3 +88,28 @@ CREATE TABLE IF NOT EXISTS articles (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
+-- 7. Tags
+CREATE TABLE IF NOT EXISTS tags (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE,
+  color TEXT NOT NULL DEFAULT 'blue',
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- 8. Problem Tags
+CREATE TABLE IF NOT EXISTS problem_tags (
+  problem_id INTEGER NOT NULL,
+  tag_id INTEGER NOT NULL,
+  PRIMARY KEY (problem_id, tag_id),
+  FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE,
+  FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+);
+
+-- 9. System Config
+CREATE TABLE IF NOT EXISTS system_config (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  config_key TEXT NOT NULL UNIQUE,
+  config_value TEXT NOT NULL,
+  updated_at TEXT DEFAULT (datetime('now'))
+);

@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       return fail("invalid parameters", 400);
     }
 
-    const [result] = await db.query(
+    const [, info] = await db.query(
       `
       INSERT INTO problems (
         title, description, input_format, output_format, sample_cases,
@@ -41,9 +41,7 @@ export async function POST(req: Request) {
       [title, description, inputFormat, outputFormat, JSON.stringify([]), timeLimit, memoryLimit, difficulty, isPublic, claims.user_id],
     );
 
-    const problemId = typeof result === "object" && result && "insertId" in result
-      ? Number((result as { insertId: number }).insertId)
-      : 0;
+    const problemId = info?.insertId ?? 0;
 
     if (problemId <= 0) {
       return fail("failed to create problem", 500);

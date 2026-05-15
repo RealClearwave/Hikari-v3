@@ -46,8 +46,7 @@ export async function GET(
         u.username AS created_by_name,
         COALESCE(s.submission_count, 0) AS submission_count,
         COALESCE(s.accepted_count, 0) AS accepted_count
-      FROM problems
-      p
+      FROM problems p
       LEFT JOIN users u ON u.id = p.created_by
       LEFT JOIN (
         SELECT
@@ -81,7 +80,16 @@ export async function GET(
       ? Number(((accepted / submissions) * 100).toFixed(1))
       : 0;
 
-    return success(problem);
+    // Fetch tags for this problem
+    const [tagRows] = await db.query(
+      `SELECT t.id, t.name, t.color FROM tags t
+       JOIN problem_tags pt ON pt.tag_id = t.id
+       WHERE pt.problem_id = ?
+       ORDER BY t.name`,
+      [problem.id]
+    );
+
+    return success({ ...problem, tags: Array.isArray(tagRows) ? tagRows : [] });
   } catch {
     return fail("failed to get problem detail", 500);
   }

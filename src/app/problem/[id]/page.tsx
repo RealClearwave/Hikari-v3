@@ -178,7 +178,7 @@ export default function ProblemDetail() {
 
   if (!problem) {
     return (
-      <Box bg="white" p={6} borderWidth={1} borderColor="gray.200" borderRadius="md" boxShadow="sm">
+      <Box bg={{ base: "white", _dark: "gray.800" }} p={6} borderWidth={1} borderColor="blackAlpha.200" borderRadius="md" boxShadow="sm">
         <Heading size="lg" mb={2}>题目不存在</Heading>
         <Text color="gray.500">题目 ID: {id}</Text>
       </Box>
@@ -189,16 +189,25 @@ export default function ProblemDetail() {
 
   return (
     <Box>
-      <Heading size="xl" mb={2} color="gray.800">{problem.id}: {problem.title}</Heading>
-      <HStack spacing={4} mb={6} fontSize="sm" color="gray.600" flexWrap="wrap">
+      <Heading size="xl" mb={2}>{problem.id}: {problem.title}</Heading>
+      <HStack spacing={4} mb={6} fontSize="sm" flexWrap="wrap">
         <Text>时间限制: <Badge colorScheme="blue">{problem.time_limit} ms</Badge></Text>
         <Text>内存限制: <Badge colorScheme="blue">{Math.round(problem.memory_limit / 1024)} MB</Badge></Text>
         <Text>难度: <Badge colorScheme={difficulty.scheme}>{difficulty.text}</Badge></Text>
         <Text>提供者: <Text as="span" fontWeight="bold">{problem.created_by_name || `User #${problem.created_by}`}</Text></Text>
+        {problem.tags && problem.tags.length > 0 && (
+          <HStack spacing={1}>
+            {problem.tags.map((t) => (
+              <Badge key={t.id} colorScheme={t.color} variant="subtle" borderRadius="full" px={2} fontSize="xs">
+                {t.name}
+              </Badge>
+            ))}
+          </HStack>
+        )}
       </HStack>
 
       <Flex gap={6} flexDir={{ base: 'column', lg: 'row' }}>
-        <Box flex="3" bg="white" p={6} borderWidth={1} borderColor="gray.200" borderRadius="md" boxShadow="sm">
+        <Box flex="3" bg={{ base: "white", _dark: "gray.800" }} p={6} borderWidth={1} borderColor="blackAlpha.200" borderRadius="md" boxShadow="sm">
           <Tabs colorScheme="blue">
             <TabList>
               <Tab fontWeight="bold">题目描述</Tab>
@@ -234,13 +243,13 @@ export default function ProblemDetail() {
                         <Flex gap={4} key={idx} flexDir={{ base: 'column', md: 'row' }}>
                           <Box flex={1}>
                             <Badge colorScheme="gray" mb={2}>样例输入 {idx + 1}</Badge>
-                            <Box bg="gray.50" p={3} borderRadius="md" fontFamily="monospace" whiteSpace="pre-wrap">
+                            <Box bg="blackAlpha.50" p={3} borderRadius="md" fontFamily="monospace" whiteSpace="pre-wrap">
                               {sample.input || '(empty)'}
                             </Box>
                           </Box>
                           <Box flex={1}>
                             <Badge colorScheme="gray" mb={2}>样例输出 {idx + 1}</Badge>
-                            <Box bg="gray.50" p={3} borderRadius="md" fontFamily="monospace" whiteSpace="pre-wrap">
+                            <Box bg="blackAlpha.50" p={3} borderRadius="md" fontFamily="monospace" whiteSpace="pre-wrap">
                               {sample.output || '(empty)'}
                             </Box>
                           </Box>
@@ -257,7 +266,7 @@ export default function ProblemDetail() {
                 ) : (
                   <Box overflowX="auto">
                     <Table size="sm" variant="simple">
-                      <Thead bg="gray.50">
+                      <Thead bg="blackAlpha.50">
                         <Tr>
                           <Th>记录 ID</Th>
                           <Th>用户</Th>
@@ -272,7 +281,7 @@ export default function ProblemDetail() {
                         {records.map((r) => {
                           const meta = statusText(r.status);
                           return (
-                            <Tr key={r.id} _hover={{ bg: 'gray.50' }}>
+                            <Tr key={r.id} _hover={{ bg: 'blackAlpha.50' }}>
                               <Td>
                                 <Link as={NextLink} href={`/record/${r.id}`} color="blue.500" fontWeight="bold" _hover={{ textDecoration: 'underline' }}>
                                   {r.id}

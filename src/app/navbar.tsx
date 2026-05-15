@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Avatar, Box, Button, Container, Flex, HStack, Link, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Text } from "@chakra-ui/react";
+import { Avatar, Box, Button, Container, Flex, HStack, IconButton, Link, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Text, useColorMode } from "@chakra-ui/react";
 import NextLink from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { FiMoon, FiSun } from "react-icons/fi";
 import { useAuthStore } from "@/store/auth";
 import UserName from "@/components/UserName";
 
@@ -13,6 +14,7 @@ const NAV_ITEMS = [
   { label: "竞赛", href: "/contest" },
   { label: "记录", href: "/record" },
   { label: "讨论", href: "/discuss" },
+  { label: "排行", href: "/leaderboard" },
   { label: "用户", href: "/user" },
 ];
 
@@ -22,6 +24,7 @@ export default function Navbar() {
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const logout = useAuthStore((state) => state.logout);
+  const { colorMode, toggleColorMode } = useColorMode();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -45,15 +48,19 @@ export default function Navbar() {
       position="sticky"
       top={0}
       zIndex={1000}
-      bg="rgba(255,255,255,0.92)"
+      bg="blackAlpha.50"
       backdropFilter="saturate(180%) blur(10px)"
       borderBottom="1px solid"
-      borderColor="blackAlpha.100"
+      borderColor="blackAlpha.200"
+      _dark={{
+        bg: "whiteAlpha.50",
+        borderColor: "whiteAlpha.100",
+      }}
     >
       <Container maxW="1200px" py={3}>
         <Flex align="center" justify="space-between" gap={4}>
           <Link as={NextLink} href="/" _hover={{ textDecoration: "none" }}>
-            <Text fontWeight="800" fontSize="lg" letterSpacing="tight" color="gray.800">
+            <Text fontWeight="800" fontSize="lg" letterSpacing="tight">
               Hikari OJ
             </Text>
           </Link>
@@ -78,6 +85,13 @@ export default function Navbar() {
           </HStack>
 
           <HStack spacing={2}>
+            <IconButton
+              aria-label="Toggle color mode"
+              icon={colorMode === "light" ? <FiMoon /> : <FiSun />}
+              size="sm"
+              variant="ghost"
+              onClick={toggleColorMode}
+            />
             {currentUser ? (
               <Menu placement="bottom-end">
                 <MenuButton

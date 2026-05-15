@@ -165,10 +165,10 @@ export default function HomePage() {
   };
 
   return (
-    <Box minH="100vh" bg="linear-gradient(180deg, #f9fbff 0%, #f6f8fb 100%)" py={{ base: 6, md: 10 }}>
+    <Box minH="100vh" bg="gray.50" py={{ base: 6, md: 10 }}>
       <Container maxW="1200px">
         <VStack align="stretch" spacing={6}>
-          <Card bg="white" border="1px solid" borderColor="blackAlpha.100">
+          <Card>
             <CardBody p={{ base: 6, md: 8 }}>
               <Flex justify="space-between" align={{ base: 'flex-start', md: 'center' }} direction={{ base: 'column', md: 'row' }} gap={6}>
                 <VStack align="start" spacing={3}>

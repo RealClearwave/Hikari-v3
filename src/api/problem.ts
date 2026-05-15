@@ -1,5 +1,11 @@
 import request, { ApiResponse } from '@/utils/request';
 
+export interface ProblemTag {
+  id: number;
+  name: string;
+  color: string;
+}
+
 export interface Problem {
   id: number;
   title: string;
@@ -16,6 +22,7 @@ export interface Problem {
   submission_count?: number;
   accepted_count?: number;
   acceptance_rate?: number;
+  tags?: ProblemTag[];
   created_at: string;
   updated_at: string;
 }
@@ -25,14 +32,11 @@ export interface ProblemListResponse {
   total: number;
 }
 
-export const getProblemList = (page: number, size: number, keyword?: string): Promise<ApiResponse<ProblemListResponse>> => {
-  return request.get('/problem/list', {
-    params: {
-        page,
-        size,
-        keyword
-    }
-  });
+export const getProblemList = (page: number, size: number, keyword?: string, tagId?: number): Promise<ApiResponse<ProblemListResponse>> => {
+  const params: Record<string, string | number> = { page, size };
+  if (keyword) params.keyword = keyword;
+  if (tagId && tagId > 0) params.tag_id = tagId;
+  return request.get('/problem/list', { params });
 };
 
 export const getProblemDetail = (id: number): Promise<ApiResponse<Problem>> => {

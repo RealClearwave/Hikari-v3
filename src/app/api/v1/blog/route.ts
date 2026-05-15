@@ -37,12 +37,12 @@ export async function POST(req: Request) {
       return fail("content is too long", 400);
     }
 
-    const [result] = await db.query(
+    const [, info] = await db.query(
       "INSERT INTO articles (user_id, title, content, type, problem_id, views, tags) VALUES (?, ?, ?, ?, ?, 0, ?)",
       [claims.user_id, title, content, type, problemId, stringifyTags(tags)],
     );
 
-    const insertId = Number((result as { insertId?: number }).insertId || 0);
+    const insertId = info?.insertId ?? 0;
     return success({ id: insertId });
   } catch {
     return fail("failed to create blog", 500);
