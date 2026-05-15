@@ -76,3 +76,17 @@ export const getContestList = (
 export const getContestDetail = (id: number): Promise<ApiResponse<ContestDetailResponse>> => {
   return request.get(`/contest/${id}`);
 };
+
+export interface CreateContestParams {
+  title: string;
+  description?: string;
+  start_time: string;
+  end_time: string;
+  type?: number;
+  password?: string;
+  problem_ids?: number[];
+}
+
+export const createContest = (params: CreateContestParams): Promise<ApiResponse<{ id: number }>> => {
+  return request.post('/admin/contest', params);
+};

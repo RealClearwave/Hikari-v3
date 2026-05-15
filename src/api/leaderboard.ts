@@ -6,6 +6,7 @@ export interface LeaderboardItem {
   avatar: string;
   role: number;
   badge: string;
+  rating: number;
   submissions: number;
   accepted: number;
   accept_rate: number;

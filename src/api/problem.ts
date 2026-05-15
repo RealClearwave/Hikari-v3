@@ -42,3 +42,20 @@ export const getProblemList = (page: number, size: number, keyword?: string, tag
 export const getProblemDetail = (id: number): Promise<ApiResponse<Problem>> => {
   return request.get(`/problem/${id}`);
 };
+
+export interface CreateProblemParams {
+  title: string;
+  description: string;
+  input_format?: string;
+  output_format?: string;
+  sample_cases?: Array<{ input: string; output: string }>;
+  time_limit: number;
+  memory_limit: number;
+  difficulty: number;
+  is_public?: boolean;
+  tag_ids?: number[];
+}
+
+export const createProblem = (params: CreateProblemParams): Promise<ApiResponse<{ id: number }>> => {
+  return request.post('/admin/problem', params);
+};

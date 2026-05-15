@@ -17,7 +17,6 @@ import {
   Link,
   List,
   ListItem,
-  Progress,
   Spinner,
   Stat,
   StatLabel,
@@ -38,12 +37,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FiArrowRight, FiBookOpen, FiCpu, FiFlag, FiSearch } from 'react-icons/fi';
 import { getBlogList, BlogItem } from '@/api/blog';
 import { getContestList } from '@/api/contest';
-import { getProblemList } from '@/api/problem';
+import { getProblemList, Problem } from '@/api/problem';
 import { getRecordList, RecordItem } from '@/api/record';
 import { streamAiResponse } from '@/api/ai-stream';
 import { RecommendedProblem } from '@/api/ai';
 import UserName from '@/components/UserName';
 import { useAuthStore } from '@/store/auth';
+import { FiClock } from 'react-icons/fi';
 
 interface RankItem {
   userId: number;
@@ -63,6 +63,7 @@ export default function HomePage() {
   const [records, setRecords] = useState<RecordItem[]>([]);
   const [problemTotal, setProblemTotal] = useState(0);
   const [contestTotal, setContestTotal] = useState(0);
+  const [latestProblems, setLatestProblems] = useState<Problem[]>([]);
 
   // AI recommendations
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -75,13 +76,16 @@ export default function HomePage() {
       const [blogRes, recordRes, problemRes, contestRes] = await Promise.all([
         getBlogList(1, 6, 0),
         getRecordList(1, 200),
-        getProblemList(1, 1),
+        getProblemList(1, 5),
         getContestList(1, 1),
       ]);
 
       if (blogRes.code === 0) setBlogs(blogRes.data.list);
       if (recordRes.code === 0) setRecords(recordRes.data.list);
-      if (problemRes.code === 0) setProblemTotal(problemRes.data.total);
+      if (problemRes.code === 0) {
+        setProblemTotal(problemRes.data.total);
+        setLatestProblems(problemRes.data.list);
+      }
       if (contestRes.code === 0) setContestTotal(contestRes.data.total);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : '加载失败';
@@ -152,12 +156,6 @@ export default function HomePage() {
       .slice(0, 8);
   }, [records]);
 
-  const acceptedRate = useMemo(() => {
-    if (records.length === 0) return 0;
-    const ac = records.filter((r) => r.status === 2).length;
-    return (ac / records.length) * 100;
-  }, [records]);
-
   const jumpToProblem = () => {
     const id = jumpId.trim();
     if (!id) return;
@@ -184,7 +182,7 @@ export default function HomePage() {
                   <Card bg="gray.50"><CardBody py={4}><Stat><StatLabel>总题目</StatLabel><StatNumber>{problemTotal}</StatNumber></Stat></CardBody></Card>
                   <Card bg="gray.50"><CardBody py={4}><Stat><StatLabel>总竞赛</StatLabel><StatNumber>{contestTotal}</StatNumber></Stat></CardBody></Card>
                   <Card bg="gray.50"><CardBody py={4}><Stat><StatLabel>最近提交</StatLabel><StatNumber>{records.length}</StatNumber></Stat></CardBody></Card>
-                  <Card bg="gray.50"><CardBody py={4}><Stat><StatLabel>通过率</StatLabel><StatNumber>{acceptedRate.toFixed(1)}%</StatNumber></Stat></CardBody></Card>
+                  <Card bg="gray.50"><CardBody py={4}><Stat><StatLabel>上榜用户</StatLabel><StatNumber>{ranking.length}</StatNumber></Stat></CardBody></Card>
                 </Grid>
               </Flex>
             </CardBody>
@@ -264,10 +262,34 @@ export default function HomePage() {
 
                 <Card>
                   <CardBody>
-                    <HStack mb={3}><Icon as={FiCpu} color="blue.500" /><Heading size="sm">训练统计</Heading></HStack>
-                    <Text color="gray.600" fontSize="sm" mb={2}>最近提交通过率</Text>
-                    <Progress value={acceptedRate} colorScheme="blue" borderRadius="full" mb={3} />
-                    <Text color="gray.500" fontSize="sm">基于最近 {records.length} 条提交记录统计</Text>
+                    <HStack mb={3}><Icon as={FiClock} color="blue.500" /><Heading size="sm">最新题目</Heading></HStack>
+                    {latestProblems.length > 0 ? (
+                      <List spacing={2}>
+                        {latestProblems.map((p) => {
+                          const diffColor = p.difficulty === 1 ? 'green' : p.difficulty === 2 ? 'orange' : 'red';
+                          const diffLabel = p.difficulty === 1 ? '简单' : p.difficulty === 2 ? '中等' : '困难';
+                          return (
+                            <ListItem key={p.id}>
+                              <Link
+                                as={NextLink}
+                                href={`/problem/${p.id}`}
+                                color="blue.600"
+                                fontSize="sm"
+                                fontWeight="500"
+                                _hover={{ textDecoration: 'underline' }}
+                              >
+                                <HStack spacing={2}>
+                                  <Badge colorScheme={diffColor} fontSize="xs">{diffLabel}</Badge>
+                                  <Text>#{p.id} {p.title}</Text>
+                                </HStack>
+                              </Link>
+                            </ListItem>
+                          );
+                        })}
+                      </List>
+                    ) : (
+                      <Text color="gray.400" fontSize="sm">暂无题目</Text>
+                    )}
                   </CardBody>
                 </Card>
 
@@ -309,7 +331,24 @@ export default function HomePage() {
                           })}
                         </List>
                       ) : (
-                        <Text color="gray.400" fontSize="sm">登录后查看个性化推荐</Text>
+                        <Box>
+                          <Text color="gray.500" fontSize="sm" mb={2}>AI 暂未生成推荐，看看最新题目：</Text>
+                          <List spacing={1}>
+                            {latestProblems.slice(0, 5).map((p) => (
+                              <ListItem key={p.id}>
+                                <Link
+                                  as={NextLink}
+                                  href={`/problem/${p.id}`}
+                                  color="blue.500"
+                                  fontSize="sm"
+                                  _hover={{ textDecoration: 'underline' }}
+                                >
+                                  #{p.id} {p.title}
+                                </Link>
+                              </ListItem>
+                            ))}
+                          </List>
+                        </Box>
                       )}
                     </CardBody>
                   </Card>

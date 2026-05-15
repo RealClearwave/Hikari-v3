@@ -15,7 +15,6 @@ const NAV_ITEMS = [
   { label: "记录", href: "/record" },
   { label: "讨论", href: "/discuss" },
   { label: "排行", href: "/leaderboard" },
-  { label: "用户", href: "/user" },
 ];
 
 export default function Navbar() {
@@ -135,9 +134,18 @@ export default function Navbar() {
                     修改信息
                   </MenuItem>
                   {currentUser.role === 1 && (
-                    <MenuItem as={NextLink} href="/admin/ai-config">
-                      AI 功能配置
-                    </MenuItem>
+                    <>
+                      <MenuDivider />
+                      <MenuItem as={NextLink} href="/admin/problem/new">
+                        创建题目
+                      </MenuItem>
+                      <MenuItem as={NextLink} href="/admin/contest/new">
+                        创建比赛
+                      </MenuItem>
+                      <MenuItem as={NextLink} href="/admin/ai-config">
+                        AI 功能配置
+                      </MenuItem>
+                    </>
                   )}
                   <MenuItem onClick={handleLogout}>
                     登出

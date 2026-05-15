@@ -5,10 +5,11 @@ import {
   Box, Table, Thead, Tbody, Tr, Th, Td, Badge, Wrap, WrapItem,
   Heading, Flex, Input, Button, HStack, IconButton, Link, Spinner, useToast
 } from '@chakra-ui/react';
-import { FaSearch } from 'react-icons/fa';
+import { FaPlus, FaSearch } from 'react-icons/fa';
 import NextLink from 'next/link';
 import { getProblemList, Problem } from '@/api/problem';
 import { getTags, Tag } from '@/api/tags';
+import { useAuthStore } from '@/store/auth';
 
 const ProblemList: React.FC = () => {
   const [problems, setProblems] = useState<Problem[]>([]);
@@ -21,6 +22,7 @@ const ProblemList: React.FC = () => {
   const [tags, setTags] = useState<Tag[]>([]);
   const size = 20;
 
+  const isAdmin = useAuthStore((s) => s.user?.role === 1);
   const toast = useToast();
 
   useEffect(() => {
@@ -72,7 +74,17 @@ const ProblemList: React.FC = () => {
       <Flex justify="space-between" align="center" mb={4}>
         <Heading size="lg">题库 (Problem Set)</Heading>
 
-        <Flex>
+        <Flex gap={3}>
+          {isAdmin && (
+            <IconButton
+              as={NextLink}
+              href="/admin/problem/new"
+              aria-label="创建题目"
+              icon={<FaPlus />}
+              colorScheme="blue"
+              size="sm"
+            />
+          )}
           <Input
             placeholder="搜索题目..."
             borderRightRadius="none"

@@ -6,6 +6,7 @@ import {
   Badge,
   Box,
   Button,
+  Container,
   Divider,
   Flex,
   Heading,
@@ -188,7 +189,8 @@ export default function ProblemDetail() {
   const difficulty = difficultyText(problem.difficulty);
 
   return (
-    <Box>
+    <Box minH="100vh" bg="gray.50" py={{ base: 6, md: 10 }}>
+      <Container maxW="1200px">
       <Heading size="xl" mb={2}>{problem.id}: {problem.title}</Heading>
       <HStack spacing={4} mb={6} fontSize="sm" flexWrap="wrap">
         <Text>时间限制: <Badge colorScheme="blue">{problem.time_limit} ms</Badge></Text>
@@ -470,6 +472,7 @@ export default function ProblemDetail() {
           </Box>
         </Box>
       </Flex>
+      </Container>
     </Box>
   );
 }

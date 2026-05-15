@@ -100,6 +100,7 @@ export default function LeaderboardPage() {
                     <Tr>
                       <Th w="80px">排名</Th>
                       <Th>用户</Th>
+                      <Th isNumeric>Rating</Th>
                       <Th isNumeric>通过</Th>
                       <Th isNumeric>提交</Th>
                       <Th isNumeric>通过率</Th>
@@ -138,6 +139,9 @@ export default function LeaderboardPage() {
                                 )}
                               </Box>
                             </HStack>
+                          </Td>
+                          <Td isNumeric>
+                            <Text fontWeight="bold">{u.rating}</Text>
                           </Td>
                           <Td isNumeric>
                             <Text fontWeight="bold" color="green.500">{u.accepted}</Text>

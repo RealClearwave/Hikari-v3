@@ -33,9 +33,9 @@ export default function DiscussListPage() {
   }, [fetchData]);
 
   return (
-    <Box bg="white" p={6} borderWidth={1} borderColor="gray.200" borderRadius="md" boxShadow="sm">
+    <Box bg={{ base: "white", _dark: "gray.800" }} p={6} borderWidth={1} borderColor="blackAlpha.200" borderRadius="md" boxShadow="sm">
       <Flex justify="space-between" align="center" mb={6}>
-        <Heading size="lg" color="gray.800">讨论区 (Discuss)</Heading>
+        <Heading size="lg">讨论区 (Discuss)</Heading>
         <Button as={NextLink} href="/discuss/new" colorScheme="blue" leftIcon={<FaComments />}>发布新帖</Button>
       </Flex>
 
@@ -44,7 +44,7 @@ export default function DiscussListPage() {
       ) : (
         <VStack spacing={0} align="stretch" divider={<Divider />}>
           {topics.map((topic) => (
-            <Box key={topic.id} py={4} _hover={{ bg: 'gray.50' }} px={2} borderRadius="md" transition="background 0.2s">
+            <Box key={topic.id} py={4} _hover={{ bg: "blackAlpha.50" }} px={2} borderRadius="md" transition="background 0.2s">
               <Flex justify="space-between" align="center">
                 <HStack spacing={4}>
                   <VStack align="start" spacing={1}>

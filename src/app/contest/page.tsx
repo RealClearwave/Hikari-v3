@@ -15,12 +15,15 @@ import {
   Badge,
   Button,
   HStack,
+  Icon,
   Link,
   Spinner,
   useToast,
 } from '@chakra-ui/react';
 import NextLink from 'next/link';
+import { FiPlus } from 'react-icons/fi';
 import { Contest, getContestList } from '@/api/contest';
+import { useAuthStore } from '@/store/auth';
 
 const PAGE_SIZE = 20;
 
@@ -39,6 +42,7 @@ export default function ContestListPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const isAdmin = useAuthStore((s) => s.user?.role === 1);
   const toast = useToast();
 
   const fetchData = useCallback(async () => {
@@ -64,10 +68,17 @@ export default function ContestListPage() {
   const maxPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <Box bg="white" p={6} borderWidth={1} borderColor="gray.200" borderRadius="md" boxShadow="sm">
+    <Box bg={{ base: "white", _dark: "gray.800" }} p={6} borderWidth={1} borderColor="blackAlpha.200" borderRadius="md" boxShadow="sm">
       <Flex justify="space-between" align="center" mb={6}>
-        <Heading size="lg" color="gray.800">比赛 (Contests)</Heading>
-        <Text color="gray.500" fontSize="sm">总计 {total} 场</Text>
+        <Heading size="lg">比赛 (Contests)</Heading>
+        <HStack spacing={3}>
+          <Text color="gray.500" fontSize="sm">总计 {total} 场</Text>
+          {isAdmin && (
+            <Button as={NextLink} href="/admin/contest/new" colorScheme="blue" size="sm" leftIcon={<Icon as={FiPlus} />}>
+              创建比赛
+            </Button>
+          )}
+        </HStack>
       </Flex>
 
       {loading ? (
@@ -75,7 +86,7 @@ export default function ContestListPage() {
       ) : (
         <>
           <Table variant="simple">
-            <Thead bg="gray.50">
+            <Thead bg="blackAlpha.50">
               <Tr>
                 <Th w="10%">状态</Th>
                 <Th>比赛名称</Th>
@@ -85,7 +96,7 @@ export default function ContestListPage() {
             </Thead>
             <Tbody>
               {list.map((c) => (
-                <Tr key={c.id} _hover={{ bg: 'gray.50' }}>
+                <Tr key={c.id} _hover={{ bg: "blackAlpha.50" }}>
                   <Td>{getStatusBadge(c)}</Td>
                   <Td>
                     <Link as={NextLink} href={`/contest/${c.id}`} color="blue.500" fontWeight="medium" _hover={{ textDecoration: 'underline' }}>
