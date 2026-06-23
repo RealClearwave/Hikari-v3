@@ -117,7 +117,7 @@ export default function DiscussDetail() {
     } finally {
       setSubmitting(false);
     }
-  }, [id, isAuthenticated, replyContent, toast]);
+  }, [id, isAuthenticated, replyContent, captchaAnswer, captchaId, refreshCaptcha, toast]);
 
   const handleDeletePost = useCallback(async () => {
     const blogId = Number(id);

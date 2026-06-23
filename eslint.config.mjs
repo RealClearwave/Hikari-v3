@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated/tooling files are not authored application source.
+    "public/llvm-wasm/**",
+    "migrate-pages.js",
+    "scripts/*.js",
   ]),
 ]);
 

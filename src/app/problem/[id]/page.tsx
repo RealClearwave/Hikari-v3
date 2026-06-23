@@ -76,7 +76,6 @@ export default function ProblemDetail() {
   const [aiSolution, setAiSolution] = useState<string | null>(null);
   const [aiGenerating, setAiGenerating] = useState(false);
   const [acCode, setAcCode] = useState("");
-  const [acLanguage, setAcLanguage] = useState("");
 
   const problemId = Number(id);
 
@@ -125,7 +124,7 @@ export default function ProblemDetail() {
       await streamAiResponse("/ai/generate-solution", {
         problemId,
         code: acCode || undefined,
-        language: acLanguage || undefined,
+        language: undefined,
       }, (token) => {
         setAiSolution((prev) => (prev || "") + token);
       });
@@ -135,7 +134,7 @@ export default function ProblemDetail() {
     } finally {
       setAiGenerating(false);
     }
-  }, [problemId, acCode, acLanguage, toast]);
+  }, [problemId, acCode, toast]);
 
   const sampleCases = useMemo<SampleCase[]>(() => {
     if (!problem?.sample_cases) return [];
@@ -330,6 +329,79 @@ export default function ProblemDetail() {
                     <Text fontSize="2xl" fontWeight="bold" color="blue.700">{acceptanceRate}%</Text>
                   </Box>
                 </Flex>
+
+                {/* SVG Donut Chart */}
+                {statusDistribution.length > 0 && (
+                  <Flex justify="center" align="center" gap={8} mb={6} flexWrap="wrap">
+                    <Box position="relative" w="180px" h="180px">
+                      <svg viewBox="0 0 36 36" width="180" height="180">
+                        {(() => {
+                          const colors: Record<number, string> = {
+                            2: '#38A169', // AC green
+                            3: '#E53E3E', // WA red
+                            4: '#DD6B20', // TLE orange
+                            5: '#DD6B20', // MLE orange
+                            6: '#D53F8C', // RE pink
+                            7: '#805AD5', // CE purple
+                            0: '#A0AEC0', // Pending gray
+                            1: '#3182CE', // Judging blue
+                          };
+                          const total = submissionCount || 1;
+                          const radius = 15.9;
+                          const circumference = 2 * Math.PI * radius;
+                          let offset = 0;
+
+                          return statusDistribution.map((item) => {
+                            const ratio = item.count / total;
+                            const dashLength = ratio * circumference;
+                            const color = colors[item.status] || '#A0AEC0';
+                            const segment = (
+                              <circle
+                                key={item.status}
+                                cx="18"
+                                cy="18"
+                                r={radius}
+                                fill="none"
+                                stroke={color}
+                                strokeWidth="3.5"
+                                strokeDasharray={`${dashLength} ${circumference - dashLength}`}
+                                strokeDashoffset={-offset}
+                                transform="rotate(-90 18 18)"
+                                opacity={ratio > 0 ? 1 : 0}
+                              >
+                                <title>{statusText(item.status).text}: {item.count} ({((item.count / total) * 100).toFixed(1)}%)</title>
+                              </circle>
+                            );
+                            offset += dashLength;
+                            return segment;
+                          });
+                        })()}
+                        {/* Center hole for donut */}
+                        <circle cx="18" cy="18" r="11" fill="white" />
+                        <text x="18" y="17" textAnchor="middle" fontSize="4" fontWeight="bold" fill="#2D3748">
+                          {submissionCount}
+                        </text>
+                        <text x="18" y="22" textAnchor="middle" fontSize="2.5" fill="#718096">
+                          总提交
+                        </text>
+                      </svg>
+                    </Box>
+                    {/* Legend */}
+                    <VStack align="start" spacing={1}>
+                      {statusDistribution.slice(0, 6).map((item) => {
+                        const meta = statusText(item.status);
+                        const pct = submissionCount > 0 ? ((item.count / submissionCount) * 100).toFixed(1) : '0';
+                        return (
+                          <HStack key={item.status} spacing={2}>
+                            <Box w="12px" h="12px" borderRadius="sm" bg={`${meta.scheme}.500`} />
+                            <Text fontSize="sm">{meta.text}</Text>
+                            <Text fontSize="sm" fontWeight="bold" color="gray.600">{item.count} ({pct}%)</Text>
+                          </HStack>
+                        );
+                      })}
+                    </VStack>
+                  </Flex>
+                )}
 
                 {statusDistribution.length === 0 ? (
                   <Text color="gray.500">暂无状态分布数据。</Text>

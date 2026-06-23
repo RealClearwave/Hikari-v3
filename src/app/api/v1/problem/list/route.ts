@@ -60,7 +60,7 @@ export async function GET(req: Request) {
     const problemIds = problems.map((p) => p.id);
 
     // Fetch tags for all returned problems
-    let tagsByProblem: Record<number, Array<{ id: number; name: string; color: string }>> = {};
+    const tagsByProblem: Record<number, Array<{ id: number; name: string; color: string }>> = {};
     if (problemIds.length > 0) {
       const placeholders = problemIds.map(() => "?").join(",");
       const [tagRows] = await db.query(

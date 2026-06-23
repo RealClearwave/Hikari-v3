@@ -55,7 +55,9 @@ export const updateMyProfile = (payload: UpdateProfilePayload): Promise<ApiRespo
   return request.put('/user/profile', payload);
 };
 
-export type UserDetail = User;
+export interface UserDetail extends User {
+  daily_activity?: Record<string, number>; // date string -> submission count
+}
 
 export const getUserDetail = (id: number): Promise<ApiResponse<UserDetail>> => {
   return request.get(`/user/${id}`);

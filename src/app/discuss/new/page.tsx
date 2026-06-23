@@ -12,7 +12,6 @@ import {
   Input,
   Switch,
   Text,
-  Textarea,
   useToast,
   VStack,
 } from '@chakra-ui/react';
@@ -20,6 +19,7 @@ import { useRouter } from 'next/navigation';
 import { createBlog } from '@/api/blog';
 import { useAuthStore } from '@/store/auth';
 import { getCaptcha } from '@/api/captcha';
+import MarkdownEditor from '@/components/MarkdownEditor';
 
 export default function DiscussNewPage() {
   const [title, setTitle] = useState('');
@@ -117,13 +117,12 @@ export default function DiscussNewPage() {
         </FormControl>
 
         <FormControl isRequired>
-          <FormLabel>内容</FormLabel>
-          <Textarea
-            placeholder="请输入帖子内容"
+          <FormLabel>内容（支持 Markdown）</FormLabel>
+          <MarkdownEditor
             value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={10}
-            maxLength={20000}
+            onChange={setContent}
+            placeholder="请输入帖子内容... 支持 Markdown 语法"
+            minHeight="320px"
           />
         </FormControl>
 

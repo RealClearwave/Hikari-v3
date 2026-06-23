@@ -7,6 +7,7 @@ export interface Contest {
   start_time: string;
   end_time: string;
   type: number;
+  password?: string;
   created_by: number;
   created_at: string;
   updated_at: string;
@@ -41,15 +42,23 @@ export interface ContestSubmissionItem {
   created_at: string;
 }
 
+export interface ContestProblemResult {
+  display_id: string;
+  attempts: number;
+  solved: boolean;
+  solve_time_minutes: number;
+}
+
 export interface ContestStandingItem {
+  rank: number;
   user_id: number;
   username: string;
   role: number;
   badge: string;
   solved: number;
-  accepted: number;
+  penalty: number; // ACM penalty time in minutes
   submissions: number;
-  wrong_attempts: number;
+  problems: Record<string, ContestProblemResult>;
 }
 
 export interface ContestDetailResponse {
@@ -58,7 +67,10 @@ export interface ContestDetailResponse {
     creator_role: number;
     creator_badge: string;
     creator_accepted_count: number;
+    has_password: boolean;
+    participant_count: number;
   };
+  user_joined: boolean;
   problems: ContestProblemItem[];
   submissions: ContestSubmissionItem[];
   standings: ContestStandingItem[];
@@ -75,6 +87,19 @@ export const getContestList = (
 
 export const getContestDetail = (id: number): Promise<ApiResponse<ContestDetailResponse>> => {
   return request.get(`/contest/${id}`);
+};
+
+export const joinContest = (
+  id: number,
+  password?: string,
+): Promise<ApiResponse<{ joined: boolean; contest_id: number; message: string }>> => {
+  return request.post(`/contest/${id}/join`, { password: password || '' });
+};
+
+export const checkContestJoined = (
+  id: number,
+): Promise<ApiResponse<{ joined: boolean; contest_id: number }>> => {
+  return request.get(`/contest/${id}/join`);
 };
 
 export interface CreateContestParams {

@@ -80,6 +80,44 @@ export default function UserProfilePage() {
     };
   }, [records]);
 
+  // Contribution heatmap: generate past 365 days grid
+  const heatmapData = useMemo(() => {
+    const activity = user?.daily_activity || {};
+    const today = new Date();
+    const cells: Array<{ date: string; count: number; dayOfWeek: number }> = [];
+
+    // Start from 52 weeks ago (364 days), aligned to Monday
+    const startDate = new Date(today);
+    startDate.setDate(startDate.getDate() - 364);
+    // Align to Monday
+    const dayOfWeek = startDate.getDay();
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    startDate.setDate(startDate.getDate() + mondayOffset);
+
+    for (let i = 0; i < 371; i++) { // 53 weeks × 7 days
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + i);
+      const dateStr = d.toISOString().slice(0, 10);
+      cells.push({
+        date: dateStr,
+        count: activity[dateStr] || 0,
+        dayOfWeek: d.getDay(),
+      });
+    }
+    return cells;
+  }, [user]);
+
+  const maxHeatCount = useMemo(() => Math.max(1, ...heatmapData.map((c) => c.count)), [heatmapData]);
+
+  function heatColor(count: number): string {
+    if (count === 0) return 'gray.100';
+    const ratio = count / maxHeatCount;
+    if (ratio <= 0.25) return 'green.100';
+    if (ratio <= 0.5) return 'green.300';
+    if (ratio <= 0.75) return 'green.500';
+    return 'green.700';
+  }
+
   const canManageThisUser = currentUser?.role === 1 && !!user && currentUser.id !== user.id;
 
   const handleAdminSave = async () => {
@@ -186,6 +224,37 @@ export default function UserProfilePage() {
                   <Text fontWeight="bold">{stats.submissions}</Text>
                 </Flex>
               </VStack>
+
+              {/* Ring Progress — AC Rate */}
+              {stats.submissions > 0 && (
+                <Flex justify="center" mt={4}>
+                  <Box position="relative" w="120px" h="120px">
+                    <svg viewBox="0 0 36 36" width="120" height="120">
+                      {/* Background ring */}
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="#E2E8F0" strokeWidth="3" />
+                      {/* Progress ring */}
+                      <circle
+                        cx="18"
+                        cy="18"
+                        r="15.9"
+                        fill="none"
+                        stroke="#38A169"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeDasharray={`${(stats.accepted / stats.submissions) * 100} ${100 - (stats.accepted / stats.submissions) * 100}`}
+                        transform="rotate(-90 18 18)"
+                        style={{ transition: 'stroke-dasharray 0.5s ease' }}
+                      />
+                      <text x="18" y="16" textAnchor="middle" fontSize="5" fontWeight="bold" fill="#2D3748">
+                        {stats.submissions > 0 ? ((stats.accepted / stats.submissions) * 100).toFixed(0) : 0}%
+                      </text>
+                      <text x="18" y="22" textAnchor="middle" fontSize="2.5" fill="#718096">
+                        AC 率
+                      </text>
+                    </svg>
+                  </Box>
+                </Flex>
+              )}
             </>
           )}
         </Box>
@@ -209,6 +278,87 @@ export default function UserProfilePage() {
                   </Link>
                 ))}
               </Flex>
+            )}
+          </Box>
+
+          {/* Contribution Heatmap */}
+          <Box bg="white" p={6} borderWidth={1} borderColor="gray.200" borderRadius="md" boxShadow="sm">
+            <Heading size="md" mb={4} borderLeft="4px solid" borderColor="green.500" pl={3}>
+              提交活跃度 · 过去一年
+            </Heading>
+            {loading ? (
+              <Flex justify="center" py={4}><Spinner /></Flex>
+            ) : (
+              <Box>
+                {/* Day labels */}
+                <Flex mb={1} ml={8}>
+                  {['一', '三', '五'].map((label, i) => (
+                    <Text key={i} fontSize="10px" color="gray.400" flex={1} textAlign="center">
+                      {label}
+                    </Text>
+                  ))}
+                </Flex>
+                {/* Grid: 7 rows (Sun-Sat) × 53 columns */}
+                <Box overflowX="auto">
+                  <Flex gap="3px">
+                    {/* Day-of-week labels */}
+                    <VStack spacing="3px" mr={1} justify="center">
+                      {['日', '一', '二', '三', '四', '五', '六'].map((label, i) => (
+                        <Text key={i} fontSize="9px" color="gray.400" h="12px" lineHeight="12px">
+                          {i % 2 === 0 ? label : ''}
+                        </Text>
+                      ))}
+                    </VStack>
+                    {/* Heatmap grid: one column per day-of-week, iterating through weeks */}
+                    {(() => {
+                      // Group cells by week
+                      const weeks: Array<Array<typeof heatmapData[0]>> = [];
+                      for (let i = 0; i < heatmapData.length; i += 7) {
+                        weeks.push(heatmapData.slice(i, i + 7));
+                      }
+                      // Transpose: for each day-of-week, show all weeks
+                      return Array.from({ length: 7 }, (_, dow) => (
+                        <VStack key={dow} spacing="3px">
+                          {weeks.map((week, wi) => {
+                            const cell = week[dow];
+                            if (!cell) return <Box key={wi} w="12px" h="12px" />;
+                            const isToday = cell.date === new Date().toISOString().slice(0, 10);
+                            return (
+                              <Box
+                                key={wi}
+                                w="12px"
+                                h="12px"
+                                borderRadius="2px"
+                                bg={isToday ? 'blue.500' : heatColor(cell.count)}
+                                border={isToday ? '1px solid' : undefined}
+                                borderColor={isToday ? 'blue.600' : undefined}
+                                title={`${cell.date}: ${cell.count} 次提交`}
+                                cursor="pointer"
+                                transition="all 0.15s"
+                                _hover={{ transform: 'scale(1.3)', zIndex: 1 }}
+                              />
+                            );
+                          })}
+                        </VStack>
+                      ));
+                    })()}
+                  </Flex>
+                </Box>
+                {/* Legend */}
+                <Flex justify="flex-end" align="center" gap={2} mt={3}>
+                  <Text fontSize="10px" color="gray.400">少</Text>
+                  {[0, 0.25, 0.5, 0.75, 1].map((ratio) => (
+                    <Box
+                      key={ratio}
+                      w="12px"
+                      h="12px"
+                      borderRadius="2px"
+                      bg={ratio === 0 ? 'gray.100' : heatColor(Math.ceil(ratio * maxHeatCount))}
+                    />
+                  ))}
+                  <Text fontSize="10px" color="gray.400">多</Text>
+                </Flex>
+              </Box>
             )}
           </Box>
 

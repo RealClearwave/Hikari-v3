@@ -136,6 +136,9 @@ export default function Navbar() {
                   {currentUser.role === 1 && (
                     <>
                       <MenuDivider />
+                      <MenuItem as={NextLink} href="/admin/dashboard" fontWeight="bold" color="purple.500">
+                        📊 管理仪表盘
+                      </MenuItem>
                       <MenuItem as={NextLink} href="/admin/problem/new">
                         创建题目
                       </MenuItem>
@@ -144,6 +147,9 @@ export default function Navbar() {
                       </MenuItem>
                       <MenuItem as={NextLink} href="/admin/ai-config">
                         AI 功能配置
+                      </MenuItem>
+                      <MenuItem as={NextLink} href="/admin/kmeans-demo">
+                        🧪 K-means 异常检测
                       </MenuItem>
                     </>
                   )}

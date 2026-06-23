@@ -19,6 +19,9 @@
 
 # production
 /build
+/release/
+/logs/
+/.run/
 
 # misc
 *.pem

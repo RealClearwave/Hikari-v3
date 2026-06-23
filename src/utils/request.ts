@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 // 定义接口返回格式，同后端 response.Response 一致
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   code: number;
   msg: string;
   data: T;
@@ -35,7 +35,7 @@ request.interceptors.response.use(
     
     // 如果代码为 0，视为成功
     if (res.code === 0) {
-      return res as any; // 这里的泛型退化直接返回剥壳后的数据，或者根据组件内类型直接处理
+      return res as unknown as AxiosResponse<ApiResponse>;
     }
     
     // 其他错误统一抛出

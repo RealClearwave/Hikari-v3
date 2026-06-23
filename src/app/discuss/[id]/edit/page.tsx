@@ -12,13 +12,13 @@ import {
   Input,
   Switch,
   Text,
-  Textarea,
   VStack,
   useToast,
 } from '@chakra-ui/react';
 import { useParams, useRouter } from 'next/navigation';
 import { getBlogDetail, updateBlog } from '@/api/blog';
 import { useAuthStore } from '@/store/auth';
+import MarkdownEditor from '@/components/MarkdownEditor';
 
 export default function DiscussEditPage() {
   const { id } = useParams<{ id: string }>();
@@ -131,8 +131,13 @@ export default function DiscussEditPage() {
         </FormControl>
 
         <FormControl isRequired>
-          <FormLabel>内容</FormLabel>
-          <Textarea value={content} onChange={(e) => setContent(e.target.value)} rows={10} maxLength={20000} />
+          <FormLabel>内容（支持 Markdown）</FormLabel>
+          <MarkdownEditor
+            value={content}
+            onChange={setContent}
+            placeholder="编辑帖子内容... 支持 Markdown 语法"
+            minHeight="320px"
+          />
         </FormControl>
 
         <FormControl>

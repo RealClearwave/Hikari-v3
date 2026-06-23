@@ -41,7 +41,31 @@ export async function GET(_: Request, context: { params: Promise<{ id: string }>
       return fail("user not found", 404);
     }
 
-    return success(user);
+    // Get daily submission activity for the past year (for contribution heatmap)
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    const sinceStr = oneYearAgo.toISOString().slice(0, 19).replace('T', ' ');
+
+    const [activityRows] = await db.query(
+      `
+      SELECT DATE(created_at) AS day, COUNT(*) AS count
+      FROM records
+      WHERE user_id = ? AND created_at >= ?
+      GROUP BY DATE(created_at)
+      ORDER BY day ASC
+      `,
+      [userId, sinceStr],
+    );
+
+    // Build a map of day -> count for the past 365 days
+    const dailyActivity: Record<string, number> = {};
+    if (Array.isArray(activityRows)) {
+      for (const row of activityRows as Array<{ day: string; count: number }>) {
+        dailyActivity[row.day] = row.count;
+      }
+    }
+
+    return success({ ...user, daily_activity: dailyActivity });
   } catch {
     return fail("failed to get user detail", 500);
   }

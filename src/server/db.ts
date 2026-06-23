@@ -27,8 +27,6 @@ export const db = {
     const trimmed = sql.trimStart();
     const isSelect = /^(SELECT|PRAGMA|WITH)\b/i.test(trimmed);
     const isInsert = /^INSERT\b/i.test(trimmed);
-    const isUpdate = /^UPDATE\b/i.test(trimmed);
-    const isDelete = /^DELETE\b/i.test(trimmed);
     const isCreate = /^(CREATE|ALTER)\b/i.test(trimmed);
 
     if (isSelect) {
